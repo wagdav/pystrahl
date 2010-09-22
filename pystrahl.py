@@ -43,7 +43,7 @@ cv     ion/rec-step
 START CONDITIONS
 ================
 
-cv    start new=0/from old impurity distribution=1     take distr. from shot   at    time
+cv start new=0/from old impurity distribution=1  take distr. from shot   at    time
     %(startfrom)d       %(shot_old)d	%(time_old)f 
 
 OUTPUT
@@ -228,9 +228,23 @@ params_defaults=dict(
 )
 
 
+def casedir_init (casedir=None):
+    import os, errno
+
+    if casedir:
+        os.mkdir(casedir)
+    else: 
+        casedir = os.getcwd()
+
+    directories=['nete', 'param_files', 'result']
+
+    for d in directories:
+        os.mkdir(os.path.join(casedir, d))
+# def casedir_init
+
 
 # Find all the parts which are to be interpolated
-import re
-params_used=re.findall(r'\%[(](.*?)[)][esfd]',strahl_param_file)
+#import re
+#params_used=re.findall(r'\%[(](.*?)[)][esfd]',strahl_param_file)
 
-print strahl_param_file%params_defaults
+#print strahl_param_file%params_defaults
