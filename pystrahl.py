@@ -124,6 +124,67 @@ cv    times of sawteeth
   %(t_saw)f
 """
 
+
+strahl_pp_datablock=\
+r"""
+cv time vector
+  %(ntimes)d
+  %(time_vector)s
+
+cv ne function
+  'interp'
+
+cv radial coordinate
+  'poloidal rho'
+
+cv # of interpolation points
+  %(npoints)d
+
+cv radial grid for interpolation
+  %(rgrid)s
+
+cv ne[cm^-3]/ Te[eV] / Ti [eV]
+  %(ygrid)s
+"""
+
+def create_pp_datablock(x, y):
+    COLS_PER_ROW = 6
+    
+    ntimes=1
+    t=1.0
+    npoints = len(x)
+
+    s=''
+    count=1
+    for i in x:
+        s += '%1.4f '%i
+        if not count % COLS_PER_ROW:
+            s+='\n'
+        count += 1
+
+    rgrid=s
+
+    s=''
+    s += '%1.4e '% y[0]
+    count=2
+    for i in y:
+        s += '%1.4e '%(i/y[0],)
+
+        if not count % COLS_PER_ROW:
+            s+='\n'
+        count += 1
+
+    ygrid=s
+
+    print rgrid
+    print
+    print ygrid
+
+# def create_pp_datablock ()
+from numpy import linspace
+create_pp_datablock(linspace(0,1,41), 1.5e10*linspace(1,0,41)**2)
+
+
 # Input parameter names as listed in *read_parameter.f*
 params_descr=dict(
     #element
