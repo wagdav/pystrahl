@@ -27,7 +27,7 @@ def array2text(a, scale=False, cols_per_row=6):
     return ' '.join(s)
 
 
-def create_pp_datablock(x, y):
+def create_pp_datablock(x, y, decay_length=1.0):
     """
     >>> o = create_pp_datablock([0, 1, 2],[1,2,3])
     >>> print o
@@ -51,6 +51,9 @@ def create_pp_datablock(x, y):
     cv ne[cm^-3]/ Te[eV] / Ti [eV]
       1.0000e+00 1.0000e+00 2.0000e+00 3.0000e+00
     <BLANKLINE>
+    cv decay length[cm] in rho_volume
+      1.0
+    <BLANKLINE>
     """
     ntimes = 1
     time_vector = 1.0
@@ -64,7 +67,7 @@ def create_pp_datablock(x, y):
     ygrid=array2text(y, scale=True)
 
     dd=dict(ntimes=ntimes, time_vector=time_vector, npoints=npoints,
-            rgrid=rgrid, ygrid=ygrid)
+            rgrid=rgrid, ygrid=ygrid, decay_length=decay_length)
 
     return templates.pp_datablock % dd
 
