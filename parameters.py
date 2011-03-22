@@ -1,3 +1,5 @@
+import numpy as np
+
 # Input parameter names as listed in *read_parameter.f*
 description = dict(
     #element
@@ -101,3 +103,16 @@ defaults = dict(
     t_saw              = 0.0,
 )
 
+
+defaults_geometry = dict(
+    vol_lcfs = 61.6,
+    r_maj = 88.0,
+    time = 1.0,
+    n_grid = 11,
+    n_sep = 9,
+    n_fourier = 0,
+    rho_pol = np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
+    rho_vol = np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
+    R_lfs = np.linspace(1, 1.1, 11),
+    R_hfs = np.linspace(1, 1.1, 11),
+)

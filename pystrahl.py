@@ -3,6 +3,23 @@ import numpy as np
 import templates
 
 
+def create_plasma_background(rho, ne, te):
+    out = [ '\nDENSITY',
+            create_pp_datablock(rho, ne),
+            '\nTEMPERATURE',
+            create_pp_datablock(rho, te)]
+    return ''.join(out)
+
+
+def create_geometry(geometry):
+    t = geometry.copy()
+    for key in ['rho_pol', 'rho_vol', 'R_lfs', 'R_hfs']:
+        t[key] = array2text(t[key])
+    out = templates.geometry % t
+
+    return out
+
+
 def array2text(a, scale=False, cols_per_row=6):
     """
     >>> array2text([20, 30, 40])
