@@ -90,14 +90,7 @@ cv    time-vector
 cv    parallel loss times (ms)
   %(tau_t)s
 
-cv      Diffusion  [m^2/s]
-  '%(fprofil)s'
-
-cv  D D_SOL Dmax beta gamma r1/r(sol)
-  0.1	1.0     2.5      15.     6.0     0.8
-
-cv    Drift function       Drift Parameter/Velocity
-  'const_c'                 'velocity'
+%(transport_datablock)s
 
 cv num of sawteeth   inversion radius (cm)
   %(n_saw)d  %(r_saw)f
@@ -151,6 +144,20 @@ cv major radius low field side / R_axis
 
 cv major radius high field side / R_axis
 %(R_hfs)s
+"""
+
+
+transport_datablock="""cv function
+ 'interp' %(drift)s
+
+cv # number of interpolation points
+ %(n_points)d
+
+cv rho poloidal grid
+ %(x)s
+
+cv D[m**2/s] / v[m/s]
+ %(y)s
 """
 
 

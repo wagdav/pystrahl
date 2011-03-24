@@ -68,7 +68,7 @@ def create_pp_datablock(x, y, decay_length=1.0):
     <BLANKLINE>
     cv time vector
       1
-      1.0
+      0.0
     <BLANKLINE>
     cv ne function
       'interp'
@@ -104,6 +104,31 @@ def create_pp_datablock(x, y, decay_length=1.0):
             rgrid=rgrid, ygrid=ygrid, decay_length=decay_length)
 
     return templates.pp_datablock % dd
+
+
+def create_transport_datablock(r, D, v):
+    """
+    >>> r = [0, 1, 2, 3, 4, 5]
+    >>> D = [1, 2, 3, 4, 5, 6]
+    >>> v = [1, 2, 3, 4, 5, 6]
+    >>> o = create_transport_datablock(r, D, v)
+    """
+    r = np.asarray(r)
+    D = np.asarray(D)
+    v = np.asarray(v)
+
+    n_points = len(r)
+    x = array2text(r)
+    D = array2text(D)
+    v = array2text(v)
+
+    o = ''
+    o += templates.transport_datablock % dict(n_points=n_points, x=x, y=D,
+            drift='')
+    o += templates.transport_datablock % dict(n_points=n_points, x=x, y=v,
+            drift="'velocity'")
+
+    return o
 
 
 def casedir_init (casedir=None):

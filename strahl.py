@@ -4,15 +4,18 @@ import datablock
 
 
 def create_input(geometry, plasma_background, params):
-    """
-    >>> import defaults
-    >>> create_input(defaults.geometry, defaults.background, defaults.main)
-    """
     files = input_file_names('..', params)
 
     t = {}
     t['geometry'] = datablock.create_geometry(geometry)
     t['background'] = datablock.create_plasma_background(plasma_background)
+
+    bg = plasma_background
+    rho = bg['rho']
+    D = bg['D']
+    v = bg['v']
+    params['transport_datablock'] = datablock.create_transport_datablock(rho, D, v)
+
     t['main'] = datablock.create_param_file(params)
 
     for key, value in t.iteritems():

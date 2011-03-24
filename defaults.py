@@ -119,6 +119,8 @@ x = np.linspace(0,1,41)
 background = dict(
     rho = x,
     ne = 1e16*(1-x**2),
-    te = 1e3*(1-x**2)
+    te = 1e3*(1-x**2),
+    D = x**2 + 0.01,
+    v = np.zeros_like(x)
 )
 
