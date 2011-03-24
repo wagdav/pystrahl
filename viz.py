@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from scipy.io import netcdf_file
 
-_ax = dict(time=0, radiation_stage=1)
+_ax = dict(time=0, total_radiation=-1)
 
 def read_results(filename):
     variables = netcdf_file(filename, 'r').variables
@@ -102,8 +102,8 @@ def plot_sxr(res):
 
     r = res['rho_poloidal_grid']
     sxr = res['sxr_radiation']
-    ax.plot(r, sxr.sum(_ax['radiation_stage']).T, '-')
-    ax.set_ylabel(r'$E_\mathrm{SXR}$')
+    ax.plot(r, sxr[:,_ax['total_radiation'],:].T, '-')
+    ax.set_ylabel(r'$E_\mathrm{SXR}\ [\mathrm{W/cm^3}]$')
     set_xaxis_rho()
 
     ax.grid(True)
