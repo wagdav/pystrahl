@@ -3,11 +3,20 @@ import numpy as np
 import templates
 
 
-def create_plasma_background(rho, ne, te):
-    out = [ '\nDENSITY',
+def create_plasma_background(plasma_background):
+    rho = plasma_background['rho']
+    ne = plasma_background['ne']
+    te = plasma_background['te']
+
+    out = [ 'DENSITY',
             create_pp_datablock(rho, ne),
-            '\nTEMPERATURE',
+
+            '\nELECTRON TEMPERATURE',
+            create_pp_datablock(rho, te),
+
+            '\nION TEMPERATURE',
             create_pp_datablock(rho, te)]
+
     return ''.join(out)
 
 
@@ -17,7 +26,15 @@ def create_geometry(geometry):
         t[key] = array2text(t[key])
     out = templates.geometry % t
 
+    dummy = array2text(np.zeros(t['n_sep']))
+    dummy = '\ncv\n%s\n' % dummy
+    out += 12*dummy
+
     return out
+
+
+def create_param_file(params):
+    return templates.param_file % params
 
 
 def array2text(a, scale=False, cols_per_row=6):
@@ -73,7 +90,7 @@ def create_pp_datablock(x, y, decay_length=1.0):
     <BLANKLINE>
     """
     ntimes = 1
-    time_vector = 1.0
+    time_vector = 0.0
     npoints = len(x)
 
     x = np.asarray(x)
@@ -94,7 +111,7 @@ def casedir_init (casedir=None):
 
     if casedir:
         os.mkdir(casedir)
-    else: 
+    else:
         casedir = os.getcwd()
 
     directories=['nete', 'param_files', 'result']

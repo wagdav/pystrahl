@@ -47,14 +47,14 @@ description = dict(
 )
 
 
-defaults = dict(
-    element            = 'C_',
-    aimp               = 12,
+main = dict(
+    element            = 'Ar',
+    aimp               = 18,
     en0                = 1.0,
     apl                = 2,
     zp                 = 1,
-    shot_grid          = 30073,
-    index_grid         = 0,
+    shot               = 99999,
+    index              = 0,
     k                  = 2.0,
     ir                 = 101,
     max_internal_steps = 100,
@@ -64,8 +64,9 @@ defaults = dict(
     shot_old           = 30073,
     time_old           = 1.0,
     saveall            = 1,
-    n_change           = 1,
-    timestep_changes   = '0.0 1.e-3 1.20 10',
+    n_change           = 2,
+    dt                 = 1e-3,
+    t_final            = 1.0,
     # SOURCE
     rl                 = 1000,
     flx_t              = 2.5e21,
@@ -80,10 +81,6 @@ defaults = dict(
     taudiv             = 55,
     taupump            = 240,
     db                 = 5.0,
-
-    # DENSITY, TEMPERATURE AND NEUTRAL FOR CX
-    shot               = 30073,
-    index              = 0,
 
     # NEOCLASSICAL TRANSPORT
     qf                 = 0,
@@ -104,15 +101,24 @@ defaults = dict(
 )
 
 
-defaults_geometry = dict(
+geometry = dict(
     vol_lcfs = 61.6,
     r_maj = 88.0,
     time = 1.0,
     n_grid = 11,
     n_sep = 9,
-    n_fourier = 0,
+    n_fourier = 1,
     rho_pol = np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
     rho_vol = np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
     R_lfs = np.linspace(1, 1.1, 11),
     R_hfs = np.linspace(1, 1.1, 11),
 )
+
+x = np.linspace(0,1,41)
+
+background = dict(
+    rho = x,
+    ne = 1e16*(1-x**2),
+    te = 1e3*(1-x**2)
+)
+

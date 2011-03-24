@@ -4,72 +4,62 @@ Template strings for generating input files for STRAHL runs.
 Test if the the *param_file* string can be interpolated with the default
 parameters:
 
->>> import parameters
->>> config_file =  param_file % parameters.defaults
+>>> import defaults
+>>> config_file =  param_file % defaults.main
 """
 
 
 param_file=\
-r"""
-ELEMENT
-=======
-
+r"""ELEMENT
 cv     element   atomic weight  energy of neutrals(eV)
   '%(element)s'       %(aimp)f             %(en0)f
 
 cv    background ion:  atomic weight    charge
   %(apl)f %(zp)f
 
-GRID - FILE
-===========
 
+GRID - FILE
 cv    shot      index
-  %(shot_grid)s      %(index_grid)d
+  %(shot)s      %(index)d
+
 
 GRID POINTS AND ITERATION
-=========================
-
 cv     rho = r**K (->K)      number of grid points
   %(k)f           %(ir)d
 
-max. iterations at fixed time  stop iteration if change below(%%)
-      1=iteration,2=no iteration
-cv     ion/rec-step
-       %(max_internal_steps)d       %(inteps)f %(itmodus)d
+   max. iterations     stop iteration       1=iteration,2=no iteration
+cv at fixed time      if change below(%%)  ion/rec-step
+   %(max_internal_steps)d  %(inteps)f       %(itmodus)d
+
 
 START CONDITIONS
-================
-
 cv start new=0/from old impurity distribution=1  take distr. from shot   at    time
     %(startfrom)d       %(shot_old)d	%(time_old)f
 
-OUTPUT
-======
 
+OUTPUT
 cv    save all cycles = 1, save final and start distribution = 0
 	%(saveall)d
 
-TIMESTEPS
-=========
 
+TIMESTEPS
 cv    number of changes (start-time+... +stop-time)
   %(n_change)d
 
 cv    time    dt at start    increase of dt after cycle     steps per cycle
-  %(timestep_changes)s
+  0   %(dt)1.1e 1.0 10
+  %(t_final)1.1f          -1 -1 -1
+
 
 SOURCE
-======
-
 cv    position(cm)    constant rate(1/s)   time dependent rate from file(1/0)
   %(rl)f %(flx_t)e %(flxfromfile)d
 
 cv    divertor puff   delta_source
-  %(divbls)f   %(delta_source)f
+  %(divbls)d   %(delta_source)d
+
 
 EDGE, RECYCLING
-===============
-
 cv    decay length of impurity outside last grid point(cm)
   %(fall_outsol)f
 
@@ -80,22 +70,17 @@ cv    SOL-width(cm)
   %(db)f
 
 DENSITY, TEMPERATURE  AND NEUTRAL  HYDROGEN  FOR  CX
-====================================================
-
 cv    take from file with:    shot        index
   %(shot)s %(index)d
 
 
 NEOCLASSICAL TRANSPORT
-======================
-
 method 0 = off,  >0 = %% of Drift,    1 = approx.
 cv  <0 =figure out, but dont use   2/3 = NEOART   neoclassics for rho_pol <
   %(qf)d  %(neo_method)d  %(rho_pol_neo)f
 
-ANOMALOUS  TRANSPORT
-====================
 
+ANOMALOUS  TRANSPORT
 cv    # of changes for transport
   %(nt_trans)d
 
@@ -149,9 +134,8 @@ cv decay length[cm] in rho_volume
 
 
 geometry =\
-"""
-cv rho volume(LCFS)[cm] R_axis [cm] time[s]
-%(vol_lcfs)f %(r_maj)f %(time)f
+"""cv rho volume(LCFS)[cm] R_axis [cm] time[s]
+%(vol_lcfs)4.1f %(r_maj)4.1f %(time)4.1f
 
 cv number of grid points, points up to LCFS, Fourier coeffs
 %(n_grid)d %(n_sep)d %(n_fourier)d
