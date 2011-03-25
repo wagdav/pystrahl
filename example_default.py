@@ -1,4 +1,5 @@
 import strahl
-import defaults
 
-strahl.create_input(defaults.geometry, defaults.background, defaults.main)
+strahl.create_input(strahl.defaults.geometry, strahl.defaults.background,
+        strahl.defaults.main)
+

@@ -1,0 +1,11 @@
+#!/bin/bash
+PYTHON=/usr/bin/python
+TOP=`dirname $0`
+
+(cd $TOP/strahl/
+$PYTHON misc.py
+$PYTHON templates.py
+$PYTHON defaults.py
+$PYTHON create_input.py
+)
+
