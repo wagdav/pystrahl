@@ -53,7 +53,7 @@ cv    time    dt at start    increase of dt after cycle     steps per cycle
 
 SOURCE
 cv    position(cm)    constant rate(1/s)   time dependent rate from file(1/0)
-  %(rl)f %(flx_t)e %(flxfromfile)d
+  %(rl)f 0 1
 
 cv    divertor puff   delta_source
   %(divbls)d   %(delta_source)d

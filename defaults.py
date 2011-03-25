@@ -69,8 +69,6 @@ main = dict(
     t_final            = 1.0,
     # SOURCE
     rl                 = 1000,
-    flx_t              = 2.5e21,
-    flxfromfile        = 0,
     divbls             = 0,
     delta_source       = 0,
 
@@ -121,6 +119,7 @@ background = dict(
     ne = 1e16*(1-x**2),
     te = 1e3*(1-x**2),
     D = x**2 + 0.01,
-    v = np.zeros_like(x)
+    v = np.zeros_like(x),
+    influx = ([1.0], [2.51e21])
 )
 

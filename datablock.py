@@ -131,6 +131,27 @@ def create_transport_datablock(r, D, v):
     return o
 
 
+def create_influx_datablock(t, flx):
+    """
+    >>> o = create_influx_datablock([0.5, 1.0], [1.25e23, 2.5e23])
+    >>> print o
+    2
+    0.500 1.250e+23
+    1.000 2.500e+23
+    <BLANKLINE>
+    """
+    t = np.asarray(t)
+    flx = np.asarray(flx)
+    assert len(t) == len(flx), 'Flux error: shape mismatch'
+
+    o = ''
+    o += '%d\n' % len(t)
+    for i,j in zip(t, flx):
+        o += '%1.3f %1.3e\n' % (i, j)
+
+    return o
+
+
 def casedir_init (casedir=None):
     import os, errno
 
