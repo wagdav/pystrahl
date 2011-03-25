@@ -14,6 +14,37 @@ def read_results(filename):
     return out
 
 
+def plot_overview(res):
+    shape_ = (4,4)
+    # first column
+    ax = plt.subplot2grid(shape_, (0,0), rowspan=2, colspan=2)
+    plot_influx_through_valve(res)
+
+    ax = plt.subplot2grid(shape_, (2,0), colspan=2)
+    plot_total_impurity_density(res)
+    decimate_plotted_lines()
+
+    ax = plt.subplot2grid(shape_, (3,0), colspan=2)
+    plot_sxr(res)
+    decimate_plotted_lines()
+
+    # second column
+    ax = plt.subplot2grid(shape_, (0,2), colspan=2)
+    plot_diffusion(res)
+
+    ax = plt.subplot2grid(shape_, (1,2), colspan=2)
+    plot_pinch(res)
+
+    ax = plt.subplot2grid(shape_, (2,2), colspan=2)
+    plot_electron_density(res)
+
+    ax = plt.subplot2grid(shape_, (3,2), colspan=2, sharex=ax)
+    plot_electron_temperature(res)
+
+    plt.subplots_adjust(left=0.07, right=0.93, top=0.93, bottom=0.07,
+            wspace=0.45, hspace=0.25)
+
+
 def plot_background(res):
     plt.clf()
     plt.subplot(211)
@@ -157,20 +188,8 @@ if __name__ == '__main__':
     of = '/home/dwagner/work/strahl/result/strahl_result.dat'
     res = read_results(of)
 
-    plt.figure(1)
-    plot_background(res)
-    plt.draw()
-
-    plt.figure(2); plt.clf()
-    plot_transport_profiles(res)
-    plt.draw()
-
-    plt.figure(3); plt.clf()
-    plot_impurity(res)
-    plt.draw()
-
-    plt.figure(4); plt.clf()
-    plot_influx_through_valve(res)
+    plt.figure(1); plt.clf()
+    plot_overview(res)
     plt.draw()
 
     plt.show()
