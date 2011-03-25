@@ -46,80 +46,55 @@ description = dict(
     #TODO
 )
 
+r = np.linspace(0,1,41)
 
-main = dict(
-    element            = 'Ar',
-    aimp               = 18,
-    en0                = 1.0,
-    apl                = 2,
-    zp                 = 1,
-    shot               = 99999,
-    index              = 0,
-    k                  = 2.0,
-    ir                 = 101,
-    max_internal_steps = 100,
-    inteps             = 0.02,
-    itmodus            = 1,
-    startfrom          = 0,
-    shot_old           = 30073,
-    time_old           = 1.0,
-    saveall            = 1,
-    n_change           = 2,
-    dt                 = 1e-3,
-    t_final            = 1.0,
-    # SOURCE
-    rl                 = 1000,
-    divbls             = 0,
-    delta_source       = 0,
+defaultParams = {
+    # geometry
+    'geometry.vol_lcfs' : 61.6,
+    'geometry.r_maj' : 88.0,
+    'geometry.time' : 1.0,
+    'geometry.n_grid' : 11,
+    'geometry.n_sep' : 9,
+    'geometry.n_fourier' : 1,
+    'geometry.rho_pol' : np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
+    'geometry.rho_vol' : np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
+    'geometry.R_lfs' : np.linspace(1, 1.1, 11),
+    'geometry.R_hfs' : np.linspace(1, 1.1, 11),
 
-    # EDGE RECYCLING
-    fall_outsol        = 2.0,
-    rclswitch          = 0,
-    rcl                = 1,
-    taudiv             = 55,
-    taupump            = 240,
-    db                 = 5.0,
+    # plasma background
+    'background.rho_poloidal' : r,
+    'background.electron_density' : 1e16 * (1 - r**2),
+    'background.electron_temperature' : 1e3 * (1 - r**2),
+    'background.atomic_weight' : 2,
+    'background.charge' : 1,
 
-    # NEOCLASSICAL TRANSPORT
-    qf                 = 0,
-    neo_method         = 2,
-    rho_pol_neo        = .95,
+    # impurity
+    'impurity.element' : 'Ar',
+    'impurity.atomic_weight' : 18,
+    'impurity.energy_of_neutrals' : 1.0,
+    'impurity.diffusion_coefficient' : r**2 + 0.01,
+    'impurity.convection_velocity' : np.zeros_like(r),
+    'impurity.influx.time' : [1.0],
+    'impurity.influx.flux' : [2.51e21],
+    'impurity.influx.position' : 1000,
 
-    # ANOMALOUS TRANSPORT
-    nt_trans           = 1,
-    t_trans            = 0.0,
-    tau_t              = 2.5,
-    fprofil            = "funct",
-    vd_nip             = '',
-    vd_xip             = '',
-    vd_yip             = '',
-    n_saw              = 0,
-    r_saw              = 35,
-    t_saw              = 0.0,
-)
+    'impurity.divertor_puff' : False,
+    'impurity.delta_source' : 0,
+    'impurity.sol_width' : 5.0,
+    'impurity.decay_length' : 2.0,
+    'impurity.parallel_loss_time' : 2.5,
 
+    # numerical parameters
+    'numerical.grid.k' : 2,
+    'numerical.grid.radial_points' : 101,
+    'numerical.max_internal_steps' : 100,
+    'numerical.internal_eps' : 0.02,
+    'numerical.iteration_type' : 1,
+    'numerical.time.final' : 1.0,
+    'numerical.time.dt' : 1e-3,
 
-geometry = dict(
-    vol_lcfs = 61.6,
-    r_maj = 88.0,
-    time = 1.0,
-    n_grid = 11,
-    n_sep = 9,
-    n_fourier = 1,
-    rho_pol = np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
-    rho_vol = np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
-    R_lfs = np.linspace(1, 1.1, 11),
-    R_hfs = np.linspace(1, 1.1, 11),
-)
-
-x = np.linspace(0,1,41)
-
-background = dict(
-    rho = x,
-    ne = 1e16*(1-x**2),
-    te = 1e3*(1-x**2),
-    D = x**2 + 0.01,
-    v = np.zeros_like(x),
-    influx = ([1.0], [2.51e21])
-)
-
+    # globals
+    'shot' : 99999,
+    'index' : 0,
+    'save_all': True,
+}

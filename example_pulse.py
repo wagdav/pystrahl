@@ -1,10 +1,12 @@
 import strahl
 
-bg = strahl.defaults.background.copy()
-main = strahl.defaults.main.copy()
+rc = strahl.defaults.defaultParams.copy()
 
-bg['influx'] = strahl.rectangular_pulse(5e-3, 2.5e23)
-main['dt'] = 1e-4
-main['tfinal'] = 0.5
+t, flx = strahl.rectangular_pulse(5e-3, 2.5e23)
 
-strahl.create_input(strahl.defaults.geometry, bg, main)
+rc['impurity.influx.time'] = t
+rc['impurity.influx.flux'] = flx
+rc['numerical.time.dt'] = 1e-4
+rc['numerical.time.final'] = 0.5
+
+strahl.create_input(rc)

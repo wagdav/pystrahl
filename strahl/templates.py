@@ -1,21 +1,15 @@
 """
 Template strings for generating input files for STRAHL runs.
-
-Test if the the *param_file* string can be interpolated with the default
-parameters:
-
->>> import defaults
->>> config_file =  param_file % defaults.main
 """
 
 
 param_file=\
 r"""ELEMENT
 cv     element   atomic weight  energy of neutrals(eV)
-  '%(element)s'       %(aimp)f             %(en0)f
+ '%(impurity.element)s' %(impurity.atomic_weight)f %(impurity.energy_of_neutrals)f
 
 cv    background ion:  atomic weight    charge
-  %(apl)f %(zp)f
+ %(background.atomic_weight)f %(background.charge)f
 
 
 GRID - FILE
@@ -25,78 +19,78 @@ cv    shot      index
 
 GRID POINTS AND ITERATION
 cv     rho = r**K (->K)      number of grid points
-  %(k)f           %(ir)d
+ %(numerical.grid.k)f %(numerical.grid.radial_points)d
 
    max. iterations     stop iteration       1=iteration,2=no iteration
 cv at fixed time      if change below(%%)  ion/rec-step
-   %(max_internal_steps)d  %(inteps)f       %(itmodus)d
+ %(numerical.max_internal_steps)d  %(numerical.internal_eps)f %(numerical.iteration_type)d
 
 
 START CONDITIONS
 cv start new=0/from old impurity distribution=1  take distr. from shot   at    time
-    %(startfrom)d       %(shot_old)d	%(time_old)f
+    0    -1   -1
 
 
 OUTPUT
 cv    save all cycles = 1, save final and start distribution = 0
-	%(saveall)d
+ %(save_all)d
 
 
 TIMESTEPS
 cv    number of changes (start-time+... +stop-time)
-  %(n_change)d
+ 2
 
 cv    time    dt at start    increase of dt after cycle     steps per cycle
-  0   %(dt)1.1e 1.0 10
-  %(t_final)1.1f          -1 -1 -1
+ 0 %(numerical.time.dt)1.1e 1.0 10
+ %(numerical.time.final)1.1f          -1 -1 -1
 
 
 SOURCE
 cv    position(cm)    constant rate(1/s)   time dependent rate from file(1/0)
-  %(rl)f 0 1
+ %(impurity.influx.position)f 0 1
 
 cv    divertor puff   delta_source
-  %(divbls)d   %(delta_source)d
+ %(impurity.divertor_puff)d   %(impurity.delta_source)d
 
 
 EDGE, RECYCLING
 cv    decay length of impurity outside last grid point(cm)
-  %(fall_outsol)f
+ %(impurity.decay_length)f
 
 cv    Rec.:ON=1/OFF=0   wall-rec.  Tau-div->SOL(ms)   Tau-pump(ms)
-  %(rclswitch)d  %(rcl)f %(taudiv)f %(taupump)f
+ 0 -1 -1 -1
 
 cv    SOL-width(cm)
-  %(db)f
+ %(impurity.sol_width)f
 
 DENSITY, TEMPERATURE  AND NEUTRAL  HYDROGEN  FOR  CX
 cv    take from file with:    shot        index
-  %(shot)s %(index)d
+ %(shot)s %(index)d
 
 
 NEOCLASSICAL TRANSPORT
 method 0 = off,  >0 = %% of Drift,    1 = approx.
 cv  <0 =figure out, but dont use   2/3 = NEOART   neoclassics for rho_pol <
-  %(qf)d  %(neo_method)d  %(rho_pol_neo)f
+  0 -1 -1
 
 
 ANOMALOUS  TRANSPORT
 cv    # of changes for transport
-  %(nt_trans)d
+ 1
 
 cv    time-vector
-  %(t_trans)s
+ 0.0
 
 cv    parallel loss times (ms)
-  %(tau_t)s
+  %(impurity.parallel_loss_time)s
 
 %(transport_datablock)s
 
 cv num of sawteeth   inversion radius (cm)
-  %(n_saw)d  %(r_saw)f
+  0 -1
 
 cv    times of sawteeth
-  %(t_saw)f
+  -1
 """
 
 

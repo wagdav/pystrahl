@@ -3,10 +3,14 @@ import numpy as np
 import templates
 
 
-def create_plasma_background(plasma_background):
-    rho = plasma_background['rho']
-    ne = plasma_background['ne']
-    te = plasma_background['te']
+def create_plasma_background(rc):
+    """
+    >>> import defaults
+    >>> o = create_plasma_background(defaults.defaultParams)
+    """
+    rho = rc['background.rho_poloidal']
+    ne = rc['background.electron_density']
+    te = rc['background.electron_temperature']
 
     out = [ 'DENSITY',
             create_pp_datablock(rho, ne),
@@ -20,21 +24,38 @@ def create_plasma_background(plasma_background):
     return ''.join(out)
 
 
-def create_geometry(geometry):
-    t = geometry.copy()
-    for key in ['rho_pol', 'rho_vol', 'R_lfs', 'R_hfs']:
-        t[key] = array2text(t[key])
-    out = templates.geometry % t
+def create_geometry(rc):
+    """
+    >>> import defaults
+    >>> o = create_geometry(defaults.defaultParams)
+    """
+    geom = {}
+    for key in rc.keys():
+        if not key.startswith('geometry'): continue
+        newkey = key.replace('geometry.', '')
+        geom[newkey] = rc[key]
 
-    dummy = array2text(np.zeros(t['n_sep']))
+    for key in ['rho_pol', 'rho_vol', 'R_lfs', 'R_hfs']:
+        geom[key] = array2text(geom[key])
+    out = templates.geometry % geom
+
+    dummy = array2text(np.zeros(geom['n_sep']))
     dummy = '\ncv\n%s\n' % dummy
     out += 12*dummy
 
     return out
 
 
-def create_param_file(params):
-    return templates.param_file % params
+def create_param_file(rc):
+    """
+    >>> import defaults
+    >>> o = create_param_file(defaults.defaultParams)
+    """
+    p = {}
+    p['transport_datablock'] = create_transport_datablock(rc)
+    p.update(rc)
+
+    return templates.param_file % p
 
 
 def array2text(a, scale=False, cols_per_row=6):
@@ -106,16 +127,19 @@ def create_pp_datablock(x, y, decay_length=1.0):
     return templates.pp_datablock % dd
 
 
-def create_transport_datablock(r, D, v):
+def create_transport_datablock(rc):
     """
     >>> r = [0, 1, 2, 3, 4, 5]
     >>> D = [1, 2, 3, 4, 5, 6]
     >>> v = [1, 2, 3, 4, 5, 6]
-    >>> o = create_transport_datablock(r, D, v)
+    >>> rc = {  'background.rho_poloidal' : r,
+    ...         'impurity.diffusion_coefficient' : D,
+    ...         'impurity.convection_velocity' : v}
+    >>> o = create_transport_datablock(rc)
     """
-    r = np.asarray(r)
-    D = np.asarray(D)
-    v = np.asarray(v)
+    r = rc['background.rho_poloidal']
+    D = rc['impurity.diffusion_coefficient']
+    v = rc['impurity.convection_velocity']
 
     n_points = len(r)
     x = array2text(r)
@@ -131,17 +155,20 @@ def create_transport_datablock(r, D, v):
     return o
 
 
-def create_influx_datablock(t, flx):
+def create_influx_datablock(rc):
     """
-    >>> o = create_influx_datablock([0.5, 1.0], [1.25e23, 2.5e23])
+    >>> t = [0.5, 1.0]
+    >>> flx = [1.25e23, 2.5e23]
+    >>> p = {'impurity.influx.time' : t, 'impurity.influx.flux' : flx}
+    >>> o = create_influx_datablock(p)
     >>> print o
     2
     0.500 1.250e+23
     1.000 2.500e+23
     <BLANKLINE>
     """
-    t = np.asarray(t)
-    flx = np.asarray(flx)
+    t = np.asarray(rc['impurity.influx.time'])
+    flx = np.asarray(rc['impurity.influx.flux'])
     assert len(t) == len(flx), 'Flux error: shape mismatch'
 
     o = ''

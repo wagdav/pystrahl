@@ -3,9 +3,10 @@ PYTHON=/usr/bin/python
 TOP=`dirname $0`
 
 (cd $TOP/strahl/
+$PYTHON create_input.py
+$PYTHON datablocks.py
+$PYTHON defaults.py
 $PYTHON misc.py
 $PYTHON templates.py
-$PYTHON defaults.py
-$PYTHON create_input.py
 )
 
