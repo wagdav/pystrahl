@@ -30,13 +30,18 @@ def geometry(rc):
     >>> o = geometry(defaultParams())
     """
     geom = {}
-    for key in rc.keys():
-        if not key.startswith('geometry'): continue
-        newkey = key.replace('geometry.', '')
-        geom[newkey] = rc[key]
 
-    for key in ['rho_pol', 'rho_vol', 'R_lfs', 'R_hfs']:
+    radial_grid = rc['geometry.rho_volume']
+    geom.update(rc)
+    geom['n_grid'] = len(radial_grid)
+    geom['n_sep'] = np.where(radial_grid <= 1.0, 1, 0).sum()
+    geom['R_lfs'] = np.zeros_like(radial_grid)
+    geom['R_hfs'] = np.zeros_like(radial_grid)
+
+    for key in ['background.rho_poloidal', 'geometry.rho_volume', 'R_lfs',
+            'R_hfs']:
         geom[key] = array2text(geom[key])
+
     out = templates.geometry % geom
 
     dummy = array2text(np.zeros(geom['n_sep']))

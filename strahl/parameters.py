@@ -46,19 +46,13 @@ _description = dict(
     #TODO
 )
 
-_r = np.linspace(0,1,41)
+_r = np.linspace(0,1,20)
 
 _defaultParams = {
     # geometry
-    'geometry.vol_lcfs' : 61.6,
-    'geometry.r_maj' : 88.0,
-    'geometry.n_grid' : 11,
-    'geometry.n_sep' : 9,
-    'geometry.n_fourier' : 1,
-    'geometry.rho_pol' : np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
-    'geometry.rho_vol' : np.hstack((np.linspace(0,1,9), [1.02, 1.04])),
-    'geometry.R_lfs' : np.linspace(1, 1.1, 11),
-    'geometry.R_hfs' : np.linspace(1, 1.1, 11),
+    'geometry.rho_volume_at_lcfs' : 20.0,
+    'geometry.major_radius' : 88.0,
+    'geometry.rho_volume' : _r,
 
     # plasma background
     'background.rho_poloidal' : _r,
@@ -78,8 +72,8 @@ _defaultParams = {
 
     'impurity.divertor_puff' : False,
     'impurity.delta_source' : 0,
-    'impurity.sol_width' : 5.0,
-    'impurity.decay_length' : 2.0,
+    'impurity.sol_width' : 1.0,
+    'impurity.decay_length' : .5,
     'impurity.parallel_loss_time' : 2.5,
 
     # numerical parameters

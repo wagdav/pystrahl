@@ -14,6 +14,10 @@ def read_results(filename):
     return out
 
 
+def radial_grid(res):
+    return res['rho_poloidal_grid']
+
+
 def plot_overview(res):
     shape_ = (4,4)
     # first column
@@ -83,7 +87,7 @@ def plot_impurity(res):
 def plot_electron_density(res):
     ax = plt.gca()
 
-    r = res['rho_poloidal_grid']
+    r = radial_grid(res)
     ne = res['electron_density']
     ax.plot(r, ne.mean(_ax['time']))
 
@@ -96,7 +100,7 @@ def plot_electron_density(res):
 def plot_electron_temperature(res):
     ax = plt.gca()
 
-    r = res['rho_poloidal_grid']
+    r = radial_grid(res)
     te = res['electron_temperature']
     ax.plot(r, te.mean(_ax['time']))
 
@@ -109,7 +113,7 @@ def plot_electron_temperature(res):
 def plot_diffusion(res):
     ax = plt.gca()
 
-    r = res['rho_poloidal_grid']
+    r = radial_grid(res)
     ax.plot(r, res['anomal_diffusion'].mean(_ax['time']))
     ax.set_ylabel(r'$D\ [\mathrm{cm^2/s}]$')
     set_xaxis_rho()
@@ -120,7 +124,7 @@ def plot_diffusion(res):
 def plot_pinch(res):
     ax = plt.gca()
 
-    r = res['rho_poloidal_grid']
+    r = radial_grid(res)
     pro = res['anomal_drift']
     ax.plot(r, res['anomal_drift'].mean(_ax['time']))
     ax.set_ylabel(r'$V\ [\mathrm{cm/s}]$')
@@ -131,7 +135,7 @@ def plot_pinch(res):
 def plot_sxr(res):
     ax = plt.gca()
 
-    r = res['rho_poloidal_grid']
+    r = radial_grid(res)
     sxr = res['sxr_radiation']
     ax.plot(r, sxr[:,_ax['total_radiation'],:].T, '-')
     ax.set_ylabel(r'$E_\mathrm{SXR}\ [\mathrm{W/cm^3}]$')
@@ -143,7 +147,7 @@ def plot_sxr(res):
 def plot_total_impurity_density(res):
     ax = plt.gca()
 
-    r = res['rho_poloidal_grid']
+    r = radial_grid(res)
     impdens = res['total_impurity_density']
     ax.plot(r, impdens.T, '-')
 
