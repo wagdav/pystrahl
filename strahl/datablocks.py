@@ -3,31 +3,31 @@ import numpy as np
 import templates
 
 
-def create_plasma_background(rc):
+def plasma_background(rc):
     """
-    >>> import defaults
-    >>> o = create_plasma_background(defaults.defaultParams)
+    >>> from parameters import defaultParams
+    >>> o = plasma_background(defaultParams())
     """
     rho = rc['background.rho_poloidal']
     ne = rc['background.electron_density']
     te = rc['background.electron_temperature']
 
     out = [ 'DENSITY',
-            create_pp_datablock(rho, ne),
+            plasma_profile(rho, ne),
 
             '\nELECTRON TEMPERATURE',
-            create_pp_datablock(rho, te),
+            plasma_profile(rho, te),
 
             '\nION TEMPERATURE',
-            create_pp_datablock(rho, te)]
+            plasma_profile(rho, te)]
 
     return ''.join(out)
 
 
-def create_geometry(rc):
+def geometry(rc):
     """
-    >>> import defaults
-    >>> o = create_geometry(defaults.defaultParams)
+    >>> from parameters import defaultParams
+    >>> o = geometry(defaultParams())
     """
     geom = {}
     for key in rc.keys():
@@ -46,45 +46,21 @@ def create_geometry(rc):
     return out
 
 
-def create_param_file(rc):
+def main_parameter_file(rc):
     """
-    >>> import defaults
-    >>> o = create_param_file(defaults.defaultParams)
+    >>> from parameters import defaultParams
+    >>> o = main_parameter_file(defaultParams())
     """
     p = {}
-    p['transport_datablock'] = create_transport_datablock(rc)
+    p['transport_datablock'] = transport_properties(rc)
     p.update(rc)
 
     return templates.param_file % p
 
 
-def array2text(a, scale=False, cols_per_row=6):
+def plasma_profile(x, y, decay_length=1.0):
     """
-    >>> array2text([20, 30, 40])
-    '2.0000e+01 3.0000e+01 4.0000e+01'
-    >>> array2text([20, 30, 40], scale=True)
-    '2.0000e+01 1.0000e+00 1.5000e+00 2.0000e+00'
-    """
-    format_str = '%1.4e'
-
-    s = []
-    if scale:
-        s.append(format_str % a[0])
-
-    for count, i in enumerate(a, len(s) + 1):
-        if scale:
-            oo=i/float(a[0])
-        else:
-            oo=i
-        s.append(format_str % oo)
-        if not count % cols_per_row:
-            s[-1] += '\n'
-    return ' '.join(s)
-
-
-def create_pp_datablock(x, y, decay_length=1.0):
-    """
-    >>> o = create_pp_datablock([0, 1, 2],[1,2,3])
+    >>> o = plasma_profile([0, 1, 2],[1,2,3])
     >>> print o
     <BLANKLINE>
     cv time vector
@@ -127,7 +103,7 @@ def create_pp_datablock(x, y, decay_length=1.0):
     return templates.pp_datablock % dd
 
 
-def create_transport_datablock(rc):
+def transport_properties(rc):
     """
     >>> r = [0, 1, 2, 3, 4, 5]
     >>> D = [1, 2, 3, 4, 5, 6]
@@ -135,7 +111,7 @@ def create_transport_datablock(rc):
     >>> rc = {  'background.rho_poloidal' : r,
     ...         'impurity.diffusion_coefficient' : D,
     ...         'impurity.convection_velocity' : v}
-    >>> o = create_transport_datablock(rc)
+    >>> o = transport_properties(rc)
     """
     r = rc['background.rho_poloidal']
     D = rc['impurity.diffusion_coefficient']
@@ -155,20 +131,19 @@ def create_transport_datablock(rc):
     return o
 
 
-def create_influx_datablock(rc):
+def impurity_influx(rc):
     """
     >>> t = [0.5, 1.0]
     >>> flx = [1.25e23, 2.5e23]
-    >>> p = {'impurity.influx.time' : t, 'impurity.influx.flux' : flx}
-    >>> o = create_influx_datablock(p)
+    >>> p = {'impurity.influx' : (t, flx)}
+    >>> o = impurity_influx(p)
     >>> print o
     2
     0.500 1.250e+23
     1.000 2.500e+23
     <BLANKLINE>
     """
-    t = np.asarray(rc['impurity.influx.time'])
-    flx = np.asarray(rc['impurity.influx.flux'])
+    t, flx = np.asarray(rc['impurity.influx'])
     assert len(t) == len(flx), 'Flux error: shape mismatch'
 
     o = ''
@@ -191,6 +166,31 @@ def casedir_init (casedir=None):
 
     for d in directories:
         os.mkdir(os.path.join(casedir, d))
+
+
+def array2text(a, scale=False, cols_per_row=6):
+    """
+    >>> array2text([20, 30, 40])
+    '2.0000e+01 3.0000e+01 4.0000e+01'
+    >>> array2text([20, 30, 40], scale=True)
+    '2.0000e+01 1.0000e+00 1.5000e+00 2.0000e+00'
+    """
+    format_str = '%1.4e'
+
+    s = []
+    if scale:
+        s.append(format_str % a[0])
+
+    for count, i in enumerate(a, len(s) + 1):
+        if scale:
+            oo=i/float(a[0])
+        else:
+            oo=i
+        s.append(format_str % oo)
+        if not count % cols_per_row:
+            s[-1] += '\n'
+    return ' '.join(s)
+
 
 
 if __name__ == '__main__':

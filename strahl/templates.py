@@ -47,7 +47,7 @@ cv    time    dt at start    increase of dt after cycle     steps per cycle
 
 SOURCE
 cv    position(cm)    constant rate(1/s)   time dependent rate from file(1/0)
- %(impurity.influx.position)f 0 1
+ %(impurity.source_position)f 0 1
 
 cv    divertor puff   delta_source
  %(impurity.divertor_puff)d   %(impurity.delta_source)d

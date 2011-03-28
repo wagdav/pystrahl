@@ -1,7 +1,7 @@
 import numpy as np
 
 # Input parameter names as listed in *read_parameter.f*
-description = dict(
+_description = dict(
     #element
     element='element',
     aimp='atomic weight',
@@ -46,9 +46,9 @@ description = dict(
     #TODO
 )
 
-r = np.linspace(0,1,41)
+_r = np.linspace(0,1,41)
 
-defaultParams = {
+_defaultParams = {
     # geometry
     'geometry.vol_lcfs' : 61.6,
     'geometry.r_maj' : 88.0,
@@ -62,9 +62,9 @@ defaultParams = {
     'geometry.R_hfs' : np.linspace(1, 1.1, 11),
 
     # plasma background
-    'background.rho_poloidal' : r,
-    'background.electron_density' : 1e16 * (1 - r**2),
-    'background.electron_temperature' : 1e3 * (1 - r**2),
+    'background.rho_poloidal' : _r,
+    'background.electron_density' : 1e16 * (1 - _r**2),
+    'background.electron_temperature' : 1e3 * (1 - _r**2),
     'background.atomic_weight' : 2,
     'background.charge' : 1,
 
@@ -72,11 +72,10 @@ defaultParams = {
     'impurity.element' : 'Ar',
     'impurity.atomic_weight' : 18,
     'impurity.energy_of_neutrals' : 1.0,
-    'impurity.diffusion_coefficient' : r**2 + 0.01,
-    'impurity.convection_velocity' : np.zeros_like(r),
-    'impurity.influx.time' : [1.0],
-    'impurity.influx.flux' : [2.51e21],
-    'impurity.influx.position' : 1000,
+    'impurity.diffusion_coefficient' : _r**2 + 0.01,
+    'impurity.convection_velocity' : np.zeros_like(_r),
+    'impurity.influx' : ([1.0], [2.51e21]),
+    'impurity.source_position' : 1000,
 
     'impurity.divertor_puff' : False,
     'impurity.delta_source' : 0,
@@ -98,3 +97,7 @@ defaultParams = {
     'index' : 0,
     'save_all': True,
 }
+
+
+def defaultParams():
+    return _defaultParams.copy()

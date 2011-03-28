@@ -1,11 +1,10 @@
 import strahl
 
-rc = strahl.defaults.defaultParams.copy()
+rc = strahl.defaultParams()
 
-t, flx = strahl.rectangular_pulse(5e-3, 2.5e23)
+t, flx = strahl.rectangular_pulse(lenght=5e-3, max_value=2.5e23)
 
-rc['impurity.influx.time'] = t
-rc['impurity.influx.flux'] = flx
+rc['impurity.influx'] = (t, flx)
 rc['numerical.time.dt'] = 1e-4
 rc['numerical.time.final'] = 0.5
 

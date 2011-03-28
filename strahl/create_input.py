@@ -7,10 +7,10 @@ def create_input(rc):
     files = input_file_names('/home/dwagner/work/strahl', rc)
 
     t = {}
-    t['geometry'] = datablocks.create_geometry(rc)
-    t['background'] = datablocks.create_plasma_background(rc)
-    t['influx'] = datablocks.create_influx_datablock(rc)
-    t['main'] = datablocks.create_param_file(rc)
+    t['geometry'] = datablocks.geometry(rc)
+    t['background'] = datablocks.plasma_background(rc)
+    t['influx'] = datablocks.impurity_influx(rc)
+    t['main'] = datablocks.main_parameter_file(rc)
 
     for key, value in t.iteritems():
         open(files[key], 'w').write(value)
@@ -35,8 +35,8 @@ def input_directory_names(maindir):
 
 def input_file_names(maindir, params):
     """
-    >>> import defaults
-    >>> o = input_file_names('xxx', defaults.defaultParams)
+    >>> from parameters import defaultParams
+    >>> o = input_file_names('xxx', defaultParams())
 
     >>> print o['geometry']
     xxx/nete/grid_99999.0
