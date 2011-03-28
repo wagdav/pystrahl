@@ -52,7 +52,6 @@ _defaultParams = {
     # geometry
     'geometry.vol_lcfs' : 61.6,
     'geometry.r_maj' : 88.0,
-    'geometry.time' : 1.0,
     'geometry.n_grid' : 11,
     'geometry.n_sep' : 9,
     'geometry.n_fourier' : 1,
