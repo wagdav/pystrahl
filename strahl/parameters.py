@@ -60,6 +60,7 @@ _defaultParams = {
     'background.electron_temperature' : 1e3 * (1 - _r**2),
     'background.atomic_weight' : 2,
     'background.charge' : 1,
+    'background.decay_length' : 1,
 
     # impurity
     'impurity.element' : 'Ar',

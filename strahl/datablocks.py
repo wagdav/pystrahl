@@ -11,15 +11,16 @@ def plasma_background(rc):
     rho = rc['background.rho_poloidal']
     ne = rc['background.electron_density']
     te = rc['background.electron_temperature']
+    decay_length= rc['background.decay_length']
 
     out = [ 'DENSITY',
-            plasma_profile(rho, ne),
+            plasma_profile(rho, ne, decay_length),
 
             '\nELECTRON TEMPERATURE',
-            plasma_profile(rho, te),
+            plasma_profile(rho, te, decay_length),
 
             '\nION TEMPERATURE',
-            plasma_profile(rho, te)]
+            plasma_profile(rho, te, decay_length)]
 
     return ''.join(out)
 
@@ -63,9 +64,9 @@ def main_parameter_file(rc):
     return templates.param_file % p
 
 
-def plasma_profile(x, y, decay_length=1.0):
+def plasma_profile(x, y, decay_length):
     """
-    >>> o = plasma_profile([0, 1, 2],[1,2,3])
+    >>> o = plasma_profile([0, 1, 2],[1,2,3], 1.0)
     >>> print o
     <BLANKLINE>
     cv time vector
