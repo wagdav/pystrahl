@@ -28,7 +28,7 @@ class MockUpEquilibrium(object):
         r *= self.minor_radius
         surface_r, surface_z = self._rz_contour(r, theta)
 
-        return surface_r, surface_z, r/self.minor_radius
+        return surface_r, surface_z, r
 
     def _polar_grid(self):
         xx = np.linspace(-1.0, 1.0, self.grid_shape[0])
@@ -40,8 +40,8 @@ class MockUpEquilibrium(object):
 
         return rho, theta
 
-    def get_volume(self):
-        r = np.linspace(0, self.minor_radius, 10)
+    def get_volume(self, n_points):
+        r = np.linspace(0, self.minor_radius, n_points)
         theta = np.linspace(0, 2 * np.pi, 30)
 
         R0, Z0 = self.magnetic_axis
@@ -65,9 +65,9 @@ def plot_equilibrium(eq):
 
     r, z, rho = eq.get_rho()
 
-    levels = np.linspace(0,1,9)
+    levels = np.linspace(0,eq.minor_radius,9)
     ax.contour(r, z, rho, colors='black', levels=levels)
-    ax.contour(r, z, rho, colors='black', levels=[1], linewidths=2)
+    ax.contour(r, z, rho, colors='black', levels=[eq.minor_radius], linewidths=2)
 
     major_radius, z_position = eq.magnetic_axis
     ax.plot([major_radius], [z_position],'kx', ms=5)

@@ -14,8 +14,26 @@ def read_results(filename):
     return out
 
 
+radial_coordinate = 'radius'
+
 def radial_grid(res):
-    return res['rho_poloidal_grid']
+    if radial_coordinate == 'radius':
+        return res['radius_grid']
+    elif radial_coordinate == 'rho_poloidal':
+        return res['rho_poloidal_grid']
+    else:
+        raise NotImplementedError('%s grid'% radial_grid)
+
+
+def set_xaxis_rho():
+    ax = plt.gca()
+    if radial_coordinate == 'radius':
+        ax.set_xlabel(r'$r\ \mathrm{[cm]}$')
+    elif radial_coordinate == 'rho_poloidal':
+        ax.set_xlabel(r'$\rho_\mathrm{pol}$')
+    else:
+        raise NotImplementedError('%s grid'% radial_grid)
+
 
 
 def plot_overview(res):
@@ -167,11 +185,6 @@ def plot_influx_through_valve(res):
     ax.set_xlabel('$t\ [\mathrm{s}$]')
     ax.set_ylabel('$\Gamma_\mathrm{valve}\ [\mathrm{cm^{-1}s^{-1}}]$')
     ax.grid(True)
-
-
-def set_xaxis_rho():
-    ax = plt.gca()
-    ax.set_xlabel(r'$\rho_\mathrm{pol}$')
 
 
 def decimate_plotted_lines():

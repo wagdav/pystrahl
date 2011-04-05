@@ -56,7 +56,9 @@ def integrate_along_chord(chord, x, y, f):
     """
     >>> x, y, f = _test_profile()
     >>> chord = [(0,0.5), (0.0, 0.6)]
-    >>> d, p = profile_along_chord(chord, x, y, f)
+    >>> o = integrate_along_chord(chord, x, y, f)
+    >>> print round(o, 3)
+    0.661
     """
     d, p = profile_along_chord(chord, x, y, f)
     return np.trapz(p, d)

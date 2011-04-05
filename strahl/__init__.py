@@ -5,3 +5,5 @@ from misc import rectangular_pulse
 from parameters import defaultParams
 
 import viz
+
+from equilibrium import *

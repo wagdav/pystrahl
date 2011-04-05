@@ -44,17 +44,4 @@ def dmv_patch():
     return dmv_patch
 
 
-def dmpx_chords():
-    x_start = 0.88
-    y_start = -0.78
-    x_end_ = np.linspace(0.6, 1.2, 3)
-    y_end = 0.78
-
-    chords = []
-    for x_end in x_end_:
-        chords.append(((x_start, x_end), (y_start, y_end)))
-
-    return chords
-
-
 
