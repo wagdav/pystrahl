@@ -31,17 +31,19 @@ def geometry(rc):
     >>> o = geometry(defaultParams())
     """
     geom = {}
+    rho_vol = rc['geometry.rho_volume'] / rc['geometry.rho_volume_at_lcfs']
+    geom['R_lfs'] = np.zeros_like(rho_vol)
+    geom['R_hfs'] = np.zeros_like(rho_vol)
+    geom['rho_volume_relative'] = rho_vol
+    geom['background.rho_poloidal'] = rc['background.rho_poloidal']
 
-    radial_grid = rc['geometry.rho_volume']
-    geom.update(rc)
-    geom['n_grid'] = len(radial_grid)
-    geom['n_sep'] = np.where(radial_grid <= 1.0, 1, 0).sum()
-    geom['R_lfs'] = np.zeros_like(radial_grid)
-    geom['R_hfs'] = np.zeros_like(radial_grid)
-
-    for key in ['background.rho_poloidal', 'geometry.rho_volume', 'R_lfs',
-            'R_hfs']:
+    for key in geom.keys():
         geom[key] = array2text(geom[key])
+
+    geom['n_grid'] = len(rho_vol)
+    geom['n_sep'] = np.where(rho_vol <= 1.0, 1, 0).sum()
+    geom['geometry.rho_volume_at_lcfs'] = rc['geometry.rho_volume_at_lcfs']
+    geom['geometry.major_radius'] = rc['geometry.major_radius']
 
     out = templates.geometry % geom
 

@@ -122,7 +122,7 @@ cv decay length[cm] in rho_volume
 
 geometry =\
 """cv rho volume(LCFS)[cm] R_axis [cm] time[s]
-%(geometry.rho_volume_at_lcfs)4.1f %(geometry.major_radius)4.1f
+%(geometry.rho_volume_at_lcfs)4.3f %(geometry.major_radius)4.1f
 
 cv number of grid points, points up to LCFS, Fourier coeffs
 %(n_grid)d %(n_sep)d 1
@@ -131,7 +131,7 @@ cv rho poloidal
 %(background.rho_poloidal)s
 
 cv rho volume / rho_volume (LCFS)
-%(geometry.rho_volume)s
+%(rho_volume_relative)s
 
 cv major radius low field side / R_axis
 %(R_lfs)s

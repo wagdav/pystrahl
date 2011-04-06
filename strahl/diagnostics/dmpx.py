@@ -6,12 +6,19 @@ from strahl.geometry.chord import integrate_along_chord
 
 def line_integrated_measurements(res, eq):
     chords = measurement_chords()
-    x, y, rho = eq.get_rho()
+    x, y, radius = eq.get_radius_contours()
+
+    f_rhovol = res['radius_grid']
+    radius_grid = np.linspace(0, eq.minor_radius, np.alen(f_rhovol))
+    eq_rhovol = eq.get_rhovol(radius_grid)
+
 
     E_sxr = []
-    r = res['radius_grid']
     for time_index in xrange(len(res['time'])):
-        E_sxr.append(np.interp(rho, r, res['sxr_radiation'][time_index,-1,:], right=0.0))
+        f = res['sxr_radiation'][time_index,-1,:]
+        f_as_radius = np.interp(eq_rhovol, f_rhovol, f)
+
+        E_sxr.append(np.interp(radius, radius_grid, f_as_radius, right=0.0))
 
     E_sxr = np.array(E_sxr)
 

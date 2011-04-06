@@ -14,10 +14,10 @@ def read_results(filename):
     return out
 
 
-radial_coordinate = 'radius'
+radial_coordinate = 'rho_volume'
 
 def radial_grid(res):
-    if radial_coordinate == 'radius':
+    if radial_coordinate == 'rho_volume':
         return res['radius_grid']
     elif radial_coordinate == 'rho_poloidal':
         return res['rho_poloidal_grid']
@@ -27,8 +27,8 @@ def radial_grid(res):
 
 def set_xaxis_rho():
     ax = plt.gca()
-    if radial_coordinate == 'radius':
-        ax.set_xlabel(r'$r\ \mathrm{[cm]}$')
+    if radial_coordinate == 'rho_volume':
+        ax.set_xlabel(r'$\rho_\mathrm{vol}\ \mathrm{[cm]}$')
     elif radial_coordinate == 'rho_poloidal':
         ax.set_xlabel(r'$\rho_\mathrm{pol}$')
     else:
