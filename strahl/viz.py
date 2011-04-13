@@ -6,15 +6,18 @@ from scipy.io import netcdf_file
 _ax = dict(time=0, total_radiation=-1)
 
 def read_results(filename):
-    variables = netcdf_file(filename, 'r').variables
+    f = netcdf_file(filename, 'r')
+    variables = f.variables
     out = {}
     for variableName, variable in variables.iteritems():
         out[variableName] = np.array(variable)
 
+    out['large_radius'] = f.large_radius[0]
+    out['small_radius'] = f.small_radius[0]
     return out
 
 
-radial_coordinate = 'rho_volume'
+radial_coordinate = 'rho_poloidal'
 
 def radial_grid(res):
     if radial_coordinate == 'rho_volume':
@@ -39,8 +42,11 @@ def set_xaxis_rho():
 def plot_overview(res):
     shape_ = (4,4)
     # first column
-    ax = plt.subplot2grid(shape_, (0,0), rowspan=2, colspan=2)
+    ax = plt.subplot2grid(shape_, (0,0), colspan=2)
     plot_influx_through_valve(res)
+
+    ax = plt.subplot2grid(shape_, (1,0), colspan=2)
+    plot_volume(res)
 
     ax = plt.subplot2grid(shape_, (2,0), colspan=2)
     plot_total_impurity_density(res)
@@ -185,6 +191,21 @@ def plot_influx_through_valve(res):
     ax.set_xlabel('$t\ [\mathrm{s}$]')
     ax.set_ylabel('$\Gamma_\mathrm{valve}\ [\mathrm{cm^{-1}s^{-1}}]$')
     ax.grid(True)
+
+
+def plot_volume(res):
+    ax = plt.gca()
+
+    r = radial_grid(res)
+    rho_volume = res['radius_grid']
+    R_axis = res['large_radius']/100 # [m]
+    volume = rho_volume**2 * 2* np.pi**2 * R_axis
+
+    ax.plot(r, volume)
+
+    set_xaxis_rho()
+    ax.grid(True)
+    ax.set_ylabel('$V\ [\mathrm{m^3}]$')
 
 
 def decimate_plotted_lines():
