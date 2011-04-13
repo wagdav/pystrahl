@@ -121,11 +121,14 @@ class LiuqeEquilibrium(Equilibrium):
                 time)
         psi = 1 - psi
 
+        grho = conn.get(r'\results::psitbx:grho[*,$1]',time)
+
         self.rho = np.array(rho)
         self.vol = np.array(vol)
         self.r = np.array(r)
         self.z = np.array(z)
         self.psi = np.array(psi)
+        self.grho = np.array(grho)
 
         r0 = conn.get(r'\results::r_axis[$1]', time)
         z0 = conn.get(r'\results::z_axis[$1]', time)
@@ -135,6 +138,10 @@ class LiuqeEquilibrium(Equilibrium):
     def get_volume(self, rho_out):
         vol_out = np.interp(rho_out, self.rho, self.vol)
         return vol_out
+
+    def get_grho(self, rho_out):
+        grho_out = np.interp(rho_out, self.rho, self.grho)
+        return grho_out
 
     def get_psi_contours(self):
         rr, zz = np.meshgrid(self.r, self.z)
