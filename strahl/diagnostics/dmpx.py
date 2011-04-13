@@ -4,29 +4,28 @@ import matplotlib.pyplot as plt
 
 from strahl.geometry.chord import integrate_along_chord
 
-def line_integrated_measurements(res, eq):
-    chords = measurement_chords()
+def line_integrated_measurements(res, eq, chord):
     x, y, psi_norm = eq.get_psi_contours()
 
     f_rho = res['rho_poloidal_grid']
 
     E_sxr = []
-    for time_index in xrange(len(res['time'])):
+    for time_index, time in enumerate(res['time']):
         f = res['sxr_radiation'][time_index,-1,:]
         E_sxr.append(np.interp(np.sqrt(psi_norm), f_rho, f, right=0.0))
 
     E_sxr = np.array(E_sxr)
 
-    profiles = []
-    for chord in chords:
-        p = []
-        for time_index in xrange(len(res['time'])):
-            d = E_sxr[time_index]
-            p.append(integrate_along_chord(chord, x, y, d))
+    times, chord_intensity = [], []
+    for time_index, t in enumerate(res['time']):
+        d = E_sxr[time_index]
+        chord_intensity.append(integrate_along_chord(chord, x, y, d))
+        times.append(t)
 
-        profiles.append(np.array(p))
+    times = np.array(times)
+    chord_intensity = np.array(chord_intensity)
 
-    return np.array(profiles)
+    return times, chord_intensity
 
 
 def plot_geometry():
@@ -44,44 +43,9 @@ def plot_geometry():
 
 
 def measurement_chords():
-    x_start = 0.88
-    y_start = -0.78
-    x_end_ = np.linspace(0.6, 1.2, 8)
-    y_end = 0.78
-
-    chords = []
-    for x_end in x_end_:
-        chords.append(((x_start, x_end), (y_start, y_end)))
-
-    return chords
+    import crpppy.diagnostics.dmpx as tcv_dmpx
+    return tcv_dmpx.dmpx.geometry(42661)
 
 
 if __name__ == '__main__':
-    from strahl.viz import read_results
-    from strahl.equilibrium import MockUpEquilibrium, plot_equilibrium
-
-    eq = MockUpEquilibrium()
-    of = '/home/dwagner/work/strahl/result/strahl_result.dat'
-    res = read_results(of)
-
-    profiles = line_integrated_measurements(res, eq)
-
-    plt.figure(1); plt.clf()
-    ax = plt.gcf().add_subplot(121)
-    ax.plot(res['time'], profiles.T)
-
-    chords = dmpx_chords()
-    labels = []
-    for i,c in enumerate(chords):
-        labels.append(r'chord %d' % i)
-    ax.legend(labels)
-    ax.set_xlabel(r'$t\ [\mathrm{s}]$')
-    plt.draw()
-
-    ax = plt.gcf().add_subplot(122)
-    plot_geometry(eq)
-    plot_equilibrium(eq)
-    plt.draw()
-
-    plt.show()
-
+    pass
