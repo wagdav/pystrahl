@@ -95,3 +95,8 @@ _defaultParams = {
 
 def defaultParams():
     return _defaultParams.copy()
+
+
+def sanity_check(params):
+    assert set(_defaultParams.keys()) == set(params.keys()),\
+        'Parameter set contains an invalid parameter name.'

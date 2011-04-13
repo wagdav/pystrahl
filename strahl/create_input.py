@@ -1,9 +1,11 @@
 import os
 
 import datablocks
+import parameters
 
 
 def create_input(rc):
+    parameters.sanity_check(rc)
     files = input_file_names('/home/dwagner/work/strahl', rc)
 
     t = {}
