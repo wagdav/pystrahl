@@ -26,9 +26,9 @@ def chord_endpoints(chord, xx, yy):
 def get_values_between_indices(a, p):
     l = line(*p)
     ret = []
-    for i in l:
+    for i,j in l:
         try:
-            value = a[i]
+            value = a[j,i]
             ret.append(value)
         except IndexError:
             print 'Coord outside the range of the array'
@@ -39,7 +39,7 @@ def get_values_between_indices(a, p):
 def profile_along_chord(chord, x, y, f):
     """
     >>> x, y, f = _test_profile()
-    >>> chord = [(0,0.5), (0.0, 0.6)]
+    >>> chord = [(0,0.5), (0.5, 0.6)]
     >>> d, p = profile_along_chord(chord, x, y, f)
     """
     p = chord_endpoints(chord, x, y)
@@ -76,8 +76,8 @@ def find_nearest_index(arr, value):
 
 
 def _test_profile():
-    x, y = np.meshgrid(np.linspace(0,2.0,10), np.linspace(0,1,10))
-    z = 1 - x**2
+    x, y = np.meshgrid(np.linspace(0,1.0,10), np.linspace(0,1.0,10))
+    z = x**2
 
     return x,y,z
 
@@ -87,10 +87,30 @@ def _test_figures():
     plt.figure()
     x, y, z = _test_profile()
     plt.contour(x, y, z)
+    chord = [(0,1.0), (0.5, 0.5)]
+    plt.plot(*chord)
 
 
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
+    import matplotlib.pyplot as plt
+    plt.figure(1); plt.clf()
+    x, y, f = _test_profile()
+    plt.contour(x, y, f)
+    plt.colorbar()
+    chord = [(0,0.6), (0.0, 0.6)]
+    plt.plot(*chord)
+
+    endpoints = chord_endpoints(chord, x, y)
+    l = line(*endpoints)
+
+    x_coords = get_values_between_indices(x, endpoints)
+    y_coords = get_values_between_indices(y, endpoints)
+    plt.plot(x_coords, y_coords, 'ko')
+
+    d, p = profile_along_chord(chord, x, y, f)
+    plt.draw()
+    plt.show()
 
