@@ -6,4 +6,4 @@ from parameters import defaultParams
 
 import viz
 
-from equilibrium import *
+from equilibrium import MockUpEquilibrium, LiuqeEquilibrium

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from geometry.tcv import vessel_patch
+import crpppy.mds as mds
 
 class Equilibrium(object):
     """
@@ -18,6 +18,19 @@ class Equilibrium(object):
     def z_position(self):
         return self.magnetic_axis[1]
 
+    def plot(self, ax=None):
+        ax = ax or plt.gca()
+
+        r, z, psi = self.get_psi_contours()
+        levels = np.linspace(0, 1, 9)
+
+        ax.contour(r, z, psi, colors='black', levels=levels)
+        ax.contour(r, z, psi, colors='black', levels=[1], linewidths=2)
+        ax.plot([self.major_radius], [self.z_position],'kx', ms=5)
+        ax.set_aspect('equal')
+        ax.figure.canvas.draw()
+
+
 class MockUpEquilibrium(Equilibrium):
     """
     Example:
@@ -25,6 +38,7 @@ class MockUpEquilibrium(Equilibrium):
 
     Circular plasma with TCV-like size:
     >>> eq = MockUpEquilibrium(magnetic_axis=(0.88, 0.23))
+    >>> eq.plot()
 
     The volume of a this can be easily calculated analytically as:
     >>> from math import pi
@@ -43,20 +57,20 @@ class MockUpEquilibrium(Equilibrium):
         self.triangularity = triangularity
         self.grid_shape = grid_shape
 
-    def get_volume(self, radius=None):
+    def get_volume(self, rho=None):
         """
         Give the plasma volume on the grid *radius*. If radius is None the
         total volume is given, i. e. radius = minor_radius is used.
         """
-        if radius == None: radius = [self.minor_radius]
+        if rho == None: rho = [1]
 
-        radius = np.asarray(radius)
+        radius = np.asarray(rho)
         theta = np.linspace(0, 2 * np.pi, 30)
 
         R0, Z0 = self.magnetic_axis
         area = []
-        for r in radius:
-            R, Z = self._rz_contour(r, theta)
+        for r in rho:
+            R, Z = self._rz_contour(r * self.minor_radius, theta)
             area.append(0.5 * np.trapz((R-R0)**2 + (Z-Z0)**2, theta))
 
         area = np.array(area)
@@ -64,24 +78,11 @@ class MockUpEquilibrium(Equilibrium):
 
         return volume
 
-    def get_radius_contours(self):
+    def get_psi_contours(self):
         r, theta = self._polar_grid()
-        r *= self.minor_radius
-        surface_r, surface_z = self._rz_contour(r, theta)
+        surface_r, surface_z = self._rz_contour(r * self.minor_radius, theta)
 
-        return surface_r, surface_z, r
-
-    def get_rhovol(self, r):
-        """
-        Return rho_vol = sqrt (volume / (2 * pi**2 * R_0)).
-
-        >>> circular = MockUpEquilibrium(magnetic_axis=(0.88, 0.23))
-        >>> rho_vol, = circular.get_rhovol([0.23])
-        >>> print round(rho_vol,2)
-        0.23
-        """
-        volume = self.get_volume(r)
-        return np.sqrt(volume/(2 * np.pi**2 * self.major_radius))
+        return surface_r, surface_z, r**2
 
     def _polar_grid(self):
         xx = np.linspace(-1.0, 1.0, self.grid_shape[0])
@@ -103,23 +104,41 @@ class MockUpEquilibrium(Equilibrium):
 
         return R, Z
 
-    def plot(self, ax=None):
-        """
-        >>> eq = MockUpEquilibrium()
-        >>> eq.plot()
-        """
-        ax = ax or plt.gca()
-        ax.add_patch(vessel_patch())
 
-        r, z, rho = self.get_radius_contours()
+class LiuqeEquilibrium(Equilibrium):
+    """
+    >>> eq = LiuqeEquilibrium(42661,1)
+    >>> eq.plot()
+    """
+    def __init__(self, shot, time):
+        conn = mds.TCV_Connection(shot)
+        rho = conn.get(r'dim_of(\results::psitbx:vol)')
+        vol = conn.get(r'\results::psitbx:vol[*,$1]', time)
 
-        levels = np.linspace(0, self.minor_radius,9)
-        ax.contour(r, z, rho, colors='black', levels=levels)
-        ax.contour(r, z, rho, colors='black', levels=[self.minor_radius], linewidths=2)
+        r = conn.get(r'dim_of(\results::psi,0)')
+        z = conn.get(r'dim_of(\results::psi,1)')
+        psi = conn.get(r'\results::psi[*,*,$1]/\results::psi_axis[$1]',
+                time)
+        psi = 1 - psi
 
-        ax.plot([self.major_radius], [self.z_position],'kx', ms=5)
-        ax.set_aspect('equal')
-        ax.figure.canvas.draw()
+        self.rho = np.array(rho)
+        self.vol = np.array(vol)
+        self.r = np.array(r)
+        self.z = np.array(z)
+        self.psi = np.array(psi)
+
+        r0 = conn.get(r'\results::r_axis[$1]', time)
+        z0 = conn.get(r'\results::z_axis[$1]', time)
+        self.magnetic_axis = float(r0), float(z0)
+        conn.close()
+
+    def get_volume(self, rho_out):
+        vol_out = np.interp(rho_out, self.rho, self.vol)
+        return vol_out
+
+    def get_psi_contours(self):
+        rr, zz = np.meshgrid(self.r, self.z)
+        return rr, zz, self.psi
 
 
 if __name__ == '__main__':
