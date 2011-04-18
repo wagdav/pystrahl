@@ -4,49 +4,45 @@ import matplotlib.pyplot as plt
 
 import strahl
 import gti
-from savitzky_golay import savitzky_golay
+from scipy import interpolate
 
 def epsilon_prime(res):
+    """
+    Return \epsilon'.
+
+    time_grid, rho_grid, epsilonp
+    """
     rho_pol = res['rho_poloidal_grid']
+    time = res['time']
 
     sxr = res['sxr_radiation'][:,-1,:]
     impdens = res['total_impurity_density']
 
     epsilonp = sxr / impdens
-    return rho_pol, epsilonp
+    return time, rho_pol, epsilonp
 
 
 def plot_epsilon_prime():
     ax = plt.gca()
-    e_rho, e_data = epsilon_prime(res)
+    e_time, e_rho, e_data = epsilon_prime(res)
     ax.plot(e_rho, e_data.T)
     ax.set_xlabel(r'$\rho$')
     ax.set_ylabel(r"$\epsilon'$")
 
 
-def ddt(time, signal):
-    window_size = 2001
-    order = 4
+def smooth_derivative(time, y, time_new):
+    s = smoothing_parameter(time)
 
-    derivative = np.zeros_like(signal)
+    tck = interpolate.splrep(time, y, s=s)
+    ynew = interpolate.splev(time_new, tck, der=0)
+    ynew1 = interpolate.splev(time_new, tck, der=1)
 
-    for i in xrange(signal.shape[1]):
-        derivative[:,i] = savitzky_golay(signal[:,1], window_size, order, deriv=1)
-        derivative[:,i] /= -np.gradient(time)
-
-    return derivative
+    return ynew, ynew1
 
 
-def Gamma_A(rho, time, n):
-    dndt = ddt(time, n) # time derivative
-
-    gamma = np.zeros_like(dndt)
-    for i in xrange(len(time)):
-        a = cumtrapz(dndt[i] * rho, rho)
-        r = cumtrapz(np.ones_like(rho),rho)
-        gamma[i,:-1] = - a / r
-
-    return gamma
+def smoothing_parameter(time):
+    m = np.alen(time)
+    return int(0.2*m)
 
 
 def Gamma(dndt, r):
@@ -63,21 +59,21 @@ res = strahl.viz.read_results(of)
 
 inverted_rho, inverted_time, inverted = gti.inverted_data(42661)
 
-rho_vol_res = res['radius_grid']
-rho_res = res['rho_poloidal_grid']
-rho_vol = np.interp(inverted_rho, rho_res, rho_vol_res)
+def epsilon_on_new_radius_grid(epsilon, inverted_rho):
+    e_time, e_rho, e_data = epsilon
 
-# Map epsilon prime to *rho_vol*
-e_rho, e_data = epsilon_prime(res)
+    epsilon_new = np.zeros((len(e_time), len(inverted_rho)))
+    for i in xrange(len(e_time)):
+        epsilon_new[i] = np.interp(inverted_rho, e_rho, e_data[i])
 
-time_res = res['time']
-epsilon = np.zeros((len(time_res), len(inverted_rho)))
-for i in xrange(len(time_res)):
-    epsilon[i] = np.interp(inverted_rho, e_rho, e_data[i])
+    return epsilon_new
 
-epsilon_i = np.zeros_like(inverted)
-for i in xrange(len(inverted_rho)):
-    epsilon_i[:,i] = np.interp(inverted_time, time_res, epsilon[:,i])
+
+def epsilon_on_new_time_grid(epsilon, inverted_time, res):
+    time_res = res['time']
+    epsilon_i = np.zeros_like(inverted)
+    for i in xrange(len(inverted_rho)):
+        epsilon_i[:,i] = np.interp(inverted_time, time_res, epsilon[:,i])
 
 # Smooth the inverted signals in time
 inverted_filtered = np.zeros_like(inverted)
