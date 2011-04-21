@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 import strahl
 import gti
-from scipy import interpolate
+import ppfit
 
 def epsilon_prime(res):
     """
@@ -30,21 +30,6 @@ def plot_epsilon_prime():
     ax.set_ylabel(r"$\epsilon'$")
 
 
-def smooth_derivative(time, y, time_new):
-    s = smoothing_parameter(time)
-
-    tck = interpolate.splrep(time, y, s=s)
-    ynew = interpolate.splev(time_new, tck, der=0)
-    ynew1 = interpolate.splev(time_new, tck, der=1)
-
-    return ynew, ynew1
-
-
-def smoothing_parameter(time):
-    m = np.alen(time)
-    return int(0.2*m)
-
-
 def Gamma(dndt, r):
     """
     Calculate the integral \int_0^r{ r' dndt dr'}.
@@ -54,11 +39,6 @@ def Gamma(dndt, r):
     return f
 
 
-of = '/home/dwagner/work/strahl/result/strahl_result.dat'
-res = strahl.viz.read_results(of)
-
-inverted_rho, inverted_time, inverted = gti.inverted_data(42661)
-
 def epsilon_on_new_radius_grid(epsilon, inverted_rho):
     e_time, e_rho, e_data = epsilon
 
@@ -66,57 +46,148 @@ def epsilon_on_new_radius_grid(epsilon, inverted_rho):
     for i in xrange(len(e_time)):
         epsilon_new[i] = np.interp(inverted_rho, e_rho, e_data[i])
 
-    return epsilon_new
+    return e_time, inverted_rho, epsilon_new
 
 
-def epsilon_on_new_time_grid(epsilon, inverted_time, res):
-    time_res = res['time']
-    epsilon_i = np.zeros_like(inverted)
-    for i in xrange(len(inverted_rho)):
-        epsilon_i[:,i] = np.interp(inverted_time, time_res, epsilon[:,i])
+def epsilon_on_new_time_grid(epsilon, inverted_time):
+    e_time, e_rho, e_data = epsilon
 
-# Smooth the inverted signals in time
-inverted_filtered = np.zeros_like(inverted)
-for i in xrange(40):
-    inverted_filtered[:,i] = savitzky_golay(inverted[:,i], 2001, 4, deriv=0)
+    epsilon_new = np.zeros((len(inverted_time), len(e_rho)))
+    for i in xrange(len(e_rho)):
+        epsilon_new[:,i] = np.interp(inverted_time, e_time, e_data[:,i])
+
+    return inverted_time, e_rho, epsilon_new
 
 
-# impurity density
-offset = inverted_filtered[0:100,:]
-offset = offset.mean(0)
-offset = offset[np.newaxis]
-impdens_exp = (inverted_filtered - offset) / epsilon_i
+def plot_gf(rho_index=0):
+    ax = plt.gca()
+    x, y = select_influx_phase(rho_index)
+    ax.plot(x, y, '.', label=str(inverted_rho[rho_index]))
 
 
+def do_fit(rho_index):
+    x, y = select_influx_phase(rho_index)
+    D, v = np.polyfit(x, y, 1)
+    D = -D
+    return D, v
 
-# flux
-G = Gamma_A(rho_vol, inverted_time, impdens_exp)
+
+def select_influx_phase(rho_index):
+    xsel = x[time_mask][:, rho_index]
+    ysel = y[time_mask][:, rho_index]
+
+    mask = np.gradient(xsel) < 0
+    xsel = xsel[mask]
+    ysel = ysel[mask]
+    return xsel, ysel
+
+
+def remap_epsilon(res, inversion):
+    inverted_rho, inverted_time, inverted = inversion
+
+    epsilon = epsilon_prime(res)
+    epsilon = epsilon_on_new_radius_grid(epsilon, inverted_rho)
+    epsilon = epsilon_on_new_time_grid(epsilon, inverted_time)
+
+    return epsilon
+
+
+def calculate_impurity_density(epsilon, inversion):
+    inverted_rho, inverted_time, inverted = inversion
+
+    offset = inverted[0:100,:]
+    offset = offset.mean(0)
+    offset = offset[np.newaxis]
+    return (inverted - offset) / epsilon[2]
+
+
+def smooth_impurity_density(time, impurity_density):
+    dndt = []
+    impurity_density = []
+    for rho_index in xrange(40):
+        signal = impurity_density_exp[:,rho_index]
+
+        p = ppfit.ppolyfit(time, signal, 20, deg=3)
+        dp = ppfit.ppolyder(p)
+
+        y = ppfit.ppolyval(p, time)
+        dy = ppfit.ppolyval(dp, time)
+
+        dndt.append(dy)
+        impurity_density.append(y)
+
+    dndt = np.array(dndt)
+    impurity_density = np.array(impurity_density).T
+
+    return impurity_density, dndt
+
+
+def plot_impurity_density(rho_index=0):
+    ax = plt.gca()
+    ax.plot(time, impurity_density_exp[:, rho_index])
+    ax.plot(time, impurity_density[:, rho_index])
+    ax.plot(time[time_mask], impurity_density[time_mask][:, rho_index])
+
+    ax.text(0.95, 0.95, r'$\rho=%1.2f$' % inverted_rho[rho_index],
+            transform=ax.transAxes, ha='right', va='top')
+    ax.figure.canvas.draw()
+
+
+def plot_impurity_gradient(rho_index=0):
+    ax = plt.gca()
+    ax.plot(time, x[:, rho_index])
+    ax.plot(time[time_mask], x[time_mask][:, rho_index])
+
+    ax.text(0.95, 0.95, r'$\rho=%1.2f$' % inverted_rho[rho_index],
+            transform=ax.transAxes, ha='right', va='top')
+    ax.figure.canvas.draw()
+
+
+def plot_impurity_flux(rho_index=0):
+    ax = plt.gca()
+    ax.plot(time, y[:, rho_index])
+    ax.plot(time[time_mask], y[time_mask][:, rho_index])
+
+    ax.text(0.95, 0.95, r'$\rho=%1.2f$' % inverted_rho[rho_index],
+            transform=ax.transAxes, ha='right', va='top')
+    ax.figure.canvas.draw()
+
+
+of = '/home/dwagner/work/strahl/result/strahl_result.dat'
+res = strahl.viz.read_results(of)
+
+inversion = gti.inverted_data(42661) # rho, time, data
+epsilon = remap_epsilon(res, inversion)
+
+impurity_density_exp = calculate_impurity_density(epsilon, inversion)
+impurity_density, dndt = smooth_impurity_density(inversion[1], impurity_density_exp)
+
+rho_vol = np.interp(inversion[0], res['rho_poloidal_grid'], res['radius_grid'])
+G = Gamma(dndt.T, rho_vol)
 
 # gradient
-dndr = np.zeros_like(impdens_exp)
-for i in xrange(len(inverted_time)):
-    dndr[i,:] = np.gradient(impdens_exp[i])/np.gradient(rho_vol)
+dndr = np.zeros_like(impurity_density)
+for i in xrange(len(inversion[1])):
+    dndr[i,:] = np.gradient(impurity_density[i])/np.gradient(rho_vol)
     l = dndr[i,:]
-    l[l>0] = 0
 
-x = dndr / impdens_exp
-y = G / impdens_exp
+x = dndr[:,:-1] / impurity_density[:,:-1]
+y = G / impurity_density[:, :-1]
 
-
-time_range = (0.5 + 0.02, 0.5 + 0.05)
-time_mask = (inverted_time > time_range[0]) & (inverted_time < time_range[1])
-
-
+time_range = (0.5 + 0.02, 0.5 + 0.04)
+time_mask = (inversion[1] > time_range[0]) & (inversion[1] < time_range[1])
 
 D = []
 v = []
 r = []
-for i in xrange(len(inverted_rho)):
-    D_, v_ = np.polyfit(x[time_mask][:,i], y[time_mask][:,i],1)
-    D_ = -D_
+for i in xrange(3, 24):
+    try:
+        D_, v_ = do_fit(i)
+    except TypeError:
+        continue
 
-    if D_ > 0.02:
-        r.append(inverted_rho[i])
+    if D_ > 0 and D_ < 200 and abs(v_) < 2000:
+        r.append(inversion[0][i])
         D.append(D_)
         v.append(v_)
 
@@ -125,13 +196,6 @@ D = np.array(D)
 v = np.array(v)
 
 plt.figure(10); plt.clf()
-
-for i in [5, 10, 25]:
-    plt.plot( x[time_mask][:,i], y[time_mask][:,i], label=str(inverted_rho[i]))
-
-plt.legend()
-
-plt.figure(11); plt.clf()
 plt.subplot(211)
 plt.plot(r,D)
 
@@ -143,6 +207,5 @@ plt.show()
 
 np.savetxt('D_profile.txt', D)
 np.savetxt('r_profile.txt', r)
-
-
+np.savetxt('v_profile.txt', v)
 
