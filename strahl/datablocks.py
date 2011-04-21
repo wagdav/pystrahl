@@ -133,10 +133,10 @@ def transport_properties(rc):
     o = ''
     o += templates.transport_datablock % dict(n_points=n_points, x=x, y=D,
             drift='')
-    #o += templates.transport_datablock % dict(n_points=n_points, x=x, y=v,
-    #        drift="'velocity'")
+    o += templates.transport_datablock % dict(n_points=n_points, x=x, y=v,
+            drift="'velocity'")
 
-    o += "cv\n const_c 'parameter'"
+    #o += "cv\n const_c 'parameter'"
 
     return o
 
