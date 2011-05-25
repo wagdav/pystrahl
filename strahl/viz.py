@@ -198,8 +198,9 @@ def plot_volume(res):
 
     r = radial_grid(res)
     rho_volume = res['radius_grid']
-    R_axis = res['large_radius']/100 # [m]
-    volume = rho_volume**2 * 2* np.pi**2 * R_axis
+    R_axis = res['large_radius']
+    volume = rho_volume**2 * 2* np.pi**2 * R_axis #cm3
+    volume /= 1e6 #m3
 
     ax.plot(r, volume)
 
