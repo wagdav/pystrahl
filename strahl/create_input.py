@@ -4,9 +4,9 @@ import datablocks
 import parameters
 
 
-def create_input(rc):
+def create_input(rc, working_directory):
     parameters.sanity_check(rc)
-    files = input_file_names('/home/dwagner/work/strahl', rc)
+    files = input_file_names(working_directory, rc)
 
     t = {}
     t['geometry'] = datablocks.geometry(rc)

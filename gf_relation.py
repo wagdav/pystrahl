@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from scipy.integrate import cumtrapz
 import matplotlib.pyplot as plt
@@ -5,6 +6,9 @@ import matplotlib.pyplot as plt
 import strahl
 import gti
 import ppfit
+
+working_directory = '/home/dwagner/work/old-strahl'
+
 
 def epsilon_prime(res):
     """
@@ -98,7 +102,7 @@ def calculate_impurity_density(epsilon, inversion):
     offset = inverted[0:100,:]
     offset = offset.mean(0)
     offset = offset[np.newaxis]
-    return (inverted - offset) / epsilon[2]
+    return (inverted - offset) / epsilon[2][991]
 
 
 def smooth_impurity_density(time, impurity_density):
@@ -153,7 +157,7 @@ def plot_impurity_flux(rho_index=0):
     ax.figure.canvas.draw()
 
 
-of = '/home/dwagner/work/strahl/result/strahl_result.dat'
+of = os.path.join(working_directory, 'result', 'strahl_result.dat')
 res = strahl.viz.read_results(of)
 
 inversion = gti.inverted_data(42661) # rho, time, data

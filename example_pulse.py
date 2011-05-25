@@ -8,4 +8,4 @@ params['impurity.influx'] = (t, flx)
 params['numerical.time.dt'] = 1e-4
 params['numerical.time.final'] = 0.5
 
-strahl.create_input(params)
+strahl.create_input(params, './wk')
