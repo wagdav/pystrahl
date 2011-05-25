@@ -4,31 +4,24 @@ Template strings for generating input files for STRAHL runs.
 
 
 param_file=\
-r"""ELEMENT
-cv     element   atomic weight  energy of neutrals(eV)
- '%(impurity.element)s' %(impurity.atomic_weight)f %(impurity.energy_of_neutrals)f
-
-cv    background ion:  atomic weight    charge
+r"""cv    background ion:  atomic weight    charge
  %(background.atomic_weight)f %(background.charge)f
-
 
 GRID - FILE
 cv    shot      index
   %(shot)s      %(index)d
 
-
 GRID POINTS AND ITERATION
-cv     rho = r**K (->K)      number of grid points
- %(numerical.grid.k)f %(numerical.grid.radial_points)d
+cv     rho = r**K (->K)      number of grid points, dr_center(cm), dr_edge(cm)
+ %(numerical.grid.k)f %(numerical.grid.radial_points)d 0.1 0.1
 
    max. iterations     stop iteration       1=iteration,2=no iteration
 cv at fixed time      if change below(%%)  ion/rec-step
- %(numerical.max_internal_steps)d  %(numerical.internal_eps)f %(numerical.iteration_type)d
-
+ %(numerical.max_internal_steps)d  %(numerical.internal_eps)f
 
 START CONDITIONS
 cv start new=0/from old impurity distribution=1  take distr. from shot   at    time
-    0    -1   -1
+ 0 -1 -1 -1
 
 
 OUTPUT
@@ -44,13 +37,19 @@ cv    time    dt at start    increase of dt after cycle     steps per cycle
  0 %(numerical.time.dt)1.1e 1.0 10
  %(numerical.time.final)1.1f          -1 -1 -1
 
+cv number of impurities
+ 1
+
+ELEMENT
+cv     element   atomic weight  energy of neutrals(eV)
+ '%(impurity.element)s' %(impurity.atomic_weight)f %(impurity.energy_of_neutrals)f
 
 SOURCE
 cv    position(cm)    constant rate(1/s)   time dependent rate from file(1/0)
  %(impurity.source_position)f 0 1
 
 cv    divertor puff   delta_source
- %(impurity.divertor_puff)d   %(impurity.delta_source)d
+ %(impurity.divertor_puff)d   %(impurity.delta_source)d 0 0
 
 
 EDGE, RECYCLING
@@ -60,8 +59,12 @@ cv    decay length of impurity outside last grid point(cm)
 cv    Rec.:ON=1/OFF=0   wall-rec.  Tau-div->SOL(ms)   Tau-pump(ms)
  0 -1 -1 -1
 
-cv    SOL-width(cm)
- %(impurity.sol_width)f
+                                               Connection lenghts [m]      Mach #
+cv    r_bound-r_lcfs (cm)  r_lim-r_lcfs(cm)   to divertor   to limiter    SOL Flow         
+          8.0 	               6.5                25.           0.5        0.05
+
+cv  additional sheath voltage
+0
 
 DENSITY, TEMPERATURE  AND NEUTRAL  HYDROGEN  FOR  CX
 cv    take from file with:    shot        index
@@ -71,7 +74,7 @@ cv    take from file with:    shot        index
 NEOCLASSICAL TRANSPORT
 method 0 = off,  >0 = %% of Drift,    1 = approx.
 cv  <0 =figure out, but dont use   2/3 = NEOART   neoclassics for rho_pol <
-  0 -1 -1
+  0 3 1 1.06 0.96
 
 
 ANOMALOUS  TRANSPORT
@@ -80,9 +83,6 @@ cv    # of changes for transport
 
 cv    time-vector
  0.0
-
-cv    parallel loss times (ms)
-  %(impurity.parallel_loss_time)s
 
 %(transport_datablock)s
 
@@ -101,7 +101,7 @@ cv time vector
   %(time_vector)s
 
 cv ne function
-  'interp'
+  'interpa'
 
 cv radial coordinate
   'poloidal rho'
@@ -114,15 +114,12 @@ cv radial grid for interpolation
 
 cv ne[cm^-3]/ Te[eV] / Ti [eV]
   %(ygrid)s
-
-cv decay length[cm] in rho_volume
-  %(decay_length)s
 """
 
 
 geometry =\
-"""cv rho volume(LCFS)[cm] R_axis [cm] time[s]
-%(geometry.rho_volume_at_lcfs)4.3f %(geometry.major_radius)4.1f
+"""cv rho volume(LCFS)[cm] R_axis [cm] U_loop[V] time[s]
+%(geometry.rho_volume_at_lcfs)4.3f %(geometry.major_radius)4.1f 0.5
 
 cv number of grid points, points up to LCFS, Fourier coeffs
 %(n_grid)d %(n_sep)d 1
