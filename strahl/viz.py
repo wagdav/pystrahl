@@ -14,6 +14,9 @@ def read_results(filename):
 
     out['large_radius'] = f.large_radius[0]
     out['small_radius'] = f.small_radius[0]
+
+    out['anomal_diffusion'] /= 1e4
+    out['anomal_drift'] /= 1e2
     return out
 
 
@@ -139,7 +142,7 @@ def plot_diffusion(res):
 
     r = radial_grid(res)
     ax.plot(r, res['anomal_diffusion'].mean(_ax['time']))
-    ax.set_ylabel(r'$D\ [\mathrm{cm^2/s}]$')
+    ax.set_ylabel(r'$D\ [\mathrm{m^2/s}]$')
     set_xaxis_rho()
 
     ax.grid(True)
@@ -151,7 +154,7 @@ def plot_pinch(res):
     r = radial_grid(res)
     pro = res['anomal_drift']
     ax.plot(r, res['anomal_drift'].mean(_ax['time']))
-    ax.set_ylabel(r'$V\ [\mathrm{cm/s}]$')
+    ax.set_ylabel(r'$V\ [\mathrm{m/s}]$')
     ax.grid(True)
     set_xaxis_rho()
 
