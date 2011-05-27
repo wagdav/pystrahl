@@ -7,7 +7,7 @@ import strahl
 import gti
 import ppfit
 
-working_directory = '/home/dwagner/work/old-strahl'
+working_directory = './wk'
 
 
 def epsilon_prime(res):
@@ -157,7 +157,7 @@ def plot_impurity_flux(rho_index=0):
     ax.figure.canvas.draw()
 
 
-of = os.path.join(working_directory, 'result', 'strahl_result.dat')
+of = os.path.join(working_directory, 'result', 'Arstrahl_result.dat')
 res = strahl.viz.read_results(of)
 
 inversion = gti.inverted_data(42661) # rho, time, data
