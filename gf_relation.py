@@ -193,32 +193,39 @@ class GradientFlux(object):
         return r, D, v
 
 
-working_directory = './wk'
-of = os.path.join(working_directory, 'result', 'Arstrahl_result.dat')
-res = strahl.viz.read_results(of)
+def reconstruct_transport_coeffs(inversion, strahl_result):
+    epsilon = epsilon_prime(strahl_result)
+    epsilon = epsilon_on_new_radius_grid(epsilon, inversion.rho)
 
-inversion = gti.inverted_data(42661).select_time(0.5, 1.0)
+    impurity_density_exp = gti.InversionData(inversion.shot, inversion.rho,
+            inversion.time, inversion.emissivity / epsilon[1])
 
-epsilon = epsilon_prime(res)
-epsilon = epsilon_on_new_radius_grid(epsilon, inversion.rho)
+    gf = GradientFlux(impurity_density_exp.select_time(0.52, 0.56))
+    r,D,v = gf.Dv_profile(left=0.0, right=0.6)
 
-impurity_density_exp = gti.InversionData(inversion.shot, inversion.rho,
-        inversion.time, inversion.emissivity / epsilon[1])
+    return r, D, v
 
-gf = GradientFlux(impurity_density_exp.select_time(0.52, 0.56))
 
-r,D,v = gf.Dv_profile(left=0.0, right=0.6)
+if __name__ == '__main__':
+    working_directory = './wk'
+    of = os.path.join(working_directory, 'result', 'Arstrahl_result.dat')
+    res = strahl.viz.read_results(of)
+    inversion = gti.inverted_data(42661).select_time(0.5, 1.0)
 
-plt.figure(10); plt.clf()
-plt.subplot(211)
-plt.plot(r,D)
+    r, D, v = reconstruct_transport_coeffs(inversion, res)
 
-plt.subplot(212)
-plt.plot(r,v)
+    plt.figure(10); plt.clf()
+    plt.subplot(211)
+    plt.plot(r,D)
 
-plt.draw()
-plt.show()
+    plt.subplot(212)
+    plt.plot(r,v)
 
-np.savetxt('D_profile.txt', D)
-np.savetxt('r_profile.txt', r)
-np.savetxt('v_profile.txt', v)
+    plt.draw()
+    plt.show()
+
+    np.savetxt('D_profile.txt', D)
+    np.savetxt('r_profile.txt', r)
+    np.savetxt('v_profile.txt', v)
+
+
