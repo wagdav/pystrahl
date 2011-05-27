@@ -98,6 +98,15 @@ class InversionData(object):
                 ax.figure.canvas.draw()
                 time.sleep(dt)
 
+    def plot_time_evolution(self, n=10):
+        rho_points = len(self.rho)
+        rho_mask = slice(None, None, rho_points // n)
+        time = self.time
+
+        ax = plt.gca()
+        ax.plot(self.time, self.emissivity[:, rho_mask])
+        ax.set_xlabel(r'$t\ [\mathrm{s}]$')
+        ax = plt.gca()
 
 if __name__ == '__main__':
     import doctest
