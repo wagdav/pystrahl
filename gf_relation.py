@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import strahl
 import gti
 import ppfit
-
+from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
 
 def epsilon_prime(res):
     """
@@ -39,19 +39,10 @@ def epsilon_prime(res):
 
 def plot_epsilon_prime():
     ax = plt.gca()
-    e_time, e_rho, e_data = epsilon_prime(res)
+    e_rho, e_data = epsilon_prime(res)
     ax.plot(e_rho, e_data.T)
     ax.set_xlabel(r'$\rho$')
     ax.set_ylabel(r"$\epsilon'$")
-
-
-def Gamma(dndt, r):
-    """
-    Calculate the integral \int_0^r{ r' dndt dr'}.
-    """
-    f = -cumtrapz(dndt * r, r)
-    f /= cumtrapz(np.ones_like(r), r)
-    return f
 
 
 def epsilon_on_new_radius_grid(epsilon, inverted_rho):
@@ -60,130 +51,206 @@ def epsilon_on_new_radius_grid(epsilon, inverted_rho):
     return inverted_rho, epsilon_new
 
 
-def calculate_impurity_density(epsilon, inversion):
-    offset = inversion.emissivity[0:100,:]
+def remove_offset(inversion, time_bbox):
+    time = inversion.time
+    time_mask = (time_bbox[0] < time) & (time < time_bbox[1])
+    offset = inversion.emissivity[time_mask,:]
     offset = offset.mean(0)
     offset = offset[np.newaxis]
+    new_emissivity = inversion.emissivity - offset
 
-    impurity_density = (inversion.emissivity - offset) / epsilon[1]
-    return impurity_density
-
-
-def smooth_impurity_density(impurity_density):
-    time = impurity_density.time
-    rho = impurity_density.rho
-
-    dt_sample = time[1] - time[0]
-    dt_smooth = 0.02
-
-    k_dt = dt_smooth // dt_sample
-    pieces = len(time) // k_dt
-    print pieces
-
-    dndt = []
-    smooth = []
-    for rho_index, r in enumerate(rho):
-        signal = impurity_density.emissivity[:,rho_index]
-
-        p = ppfit.ppolyfit(time, signal, pieces, deg=3)
-        dp = ppfit.ppolyder(p)
-
-        y = ppfit.ppolyval(p, time)
-        dy = ppfit.ppolyval(dp, time)
-
-        dndt.append(dy)
-        smooth.append(y)
-
-    dndt = np.array(dndt)
-    smooth = np.array(smooth).T
-    dndt = gti.InversionData(impurity_density.shot, rho, time, dndt)
-    smooth = gti.InversionData(impurity_density.shot, rho, time, smooth)
-
-    return smooth, dndt
+    d = type(inversion)(inversion.shot, inversion.rho, inversion.time,
+            new_emissivity)
+    return d
 
 
-class GradientFlux(object):
-    def __init__(self, impurity_density_exp):
-        self.impurity_density_exp = impurity_density_exp
-        self.eval_gradient_flux()
+class DataSmoother(object):
+    def __init__(self, raw_data, dt=0.015):
+        self.time = raw_data.time
+        self.rho = raw_data.rho
+        self.data = raw_data.emissivity
 
-    def _smooth(self):
-        smooth, dndt = smooth_impurity_density(self.impurity_density_exp)
-        return smooth, dndt
+        self.test_rho = [0, 5, 12]
+        self.test_times = [0.52, 0.55]
+        self.dt = dt
 
-    def eval_gradient_flux(self):
-        impurity_density, dndt = self._smooth()
-        rho = self.impurity_density_exp.rho
-        time = self.impurity_density_exp.time
-        rho_vol = np.interp(rho, res['rho_poloidal_grid'], res['radius_grid'])
-        G = Gamma(dndt.emissivity.T, rho_vol)
+    def _time_derivative(self, rho_index):
+        time = self.time
+        signal = self.data[:, rho_index]
 
-        dndr = np.zeros_like(impurity_density.emissivity)
-        for i, t in enumerate(time):
-            dndr[i,:] = np.gradient(impurity_density.emissivity[i])/np.gradient(rho_vol)
+        tt = np.array_split(time, self._pieces())
+        t = np.array([np.mean(i) for i in tt])
+        s = LSQUnivariateSpline(time, signal, t, k=3)
+        return s(time), s(time,1)
 
-        x = dndr[:,:-1] / impurity_density.emissivity[:,:-1]
-        y = G / impurity_density.emissivity[:, :-1]
+    def _pieces(self):
+        time = self.time
+        dt = self.dt
+        dt_sample = time[1] - time[0]
+        k_dt = dt // dt_sample
+        pieces = len(time) // k_dt
+        return pieces
 
-        self.gradient = x
-        self.flux = y
-        return x, y
-
-    def plot_gradient(self, rho_index=0):
-        ax = plt.gca()
-        time = self.impurity_density_exp.time
-        rho = self.impurity_density_exp.rho
-
-        ax.plot(time, self.gradient[:, rho_index])
-        ax.text(0.95, 0.95, r'$\rho=%1.2f$' % rho[rho_index],
-                transform=ax.transAxes, ha='right', va='top')
-        ax.figure.canvas.draw()
-
-    def plot_flux(self, rho_index=0):
-        ax = plt.gca()
-        time = self.impurity_density_exp.time
-        rho = self.impurity_density_exp.rho
-        ax.plot(time, self.flux[:, rho_index])
-
-        ax.text(0.95, 0.95, r'$\rho=%1.2f$' % rho[rho_index],
-                transform=ax.transAxes, ha='right', va='top')
-        ax.figure.canvas.draw()
+    def _rho_derivative(self, time_index):
+        rho = self.rho
+        y = self.data[time_index, :]
+        s = UnivariateSpline(rho, y, s=0)
+        return s(rho), s(rho,1)
 
     def plot_time_evolution(self):
         ax = plt.gca()
+        for i in np.searchsorted(self.rho, self.test_rho):
+            y, dy = self._time_derivative(i)
+            label = r'$\rho=%1.2f$' % self.rho[i]
+            line, = ax.plot(self.time, self.data[:,i], '-', label=label)
+            ax.plot(self.time, y, lw=2, color='black')
 
-        d = self.impurity_density_exp
-        ax.plot(d.time, d.emissivity[:, ::5], '.')
-        smooth, dndt = self._smooth()
-        ax.plot(smooth.time, smooth.emissivity[:, ::5], lw=2)
-
-    def plot_gf(self, rho_index=0):
+    def plot_dndt(self):
         ax = plt.gca()
+        for i in np.searchsorted(self.rho, self.test_rho):
+            y, dy = self._time_derivative(i)
+            label = r'$\rho=%1.2f$' % self.rho[i]
+            ax.plot(self.time, dy, label=label)
+
+    def plot_profiles(self):
+        ax = plt.gca()
+        for i in np.searchsorted(self.time, self.test_times):
+            y, dy = self._rho_derivative(i)
+            label = r'$t=%1.2f\ \mathrm{s}$' % self.time[i]
+            line, = ax.plot(self.rho, self.data[i,:], 'o', label=label)
+            ax.plot(self.rho, y, color='black')
+
+    def plot_dndr(self):
+        ax = plt.gca()
+        for i in np.searchsorted(self.time, self.test_times):
+            y, dy = self._rho_derivative(i)
+            label = r'$t=%1.2f\ \mathrm{s}$' % self.time[i]
+            line, = ax.plot(self.rho, dy, '-', label=label)
+
+    def check_time_derivatives(self):
+        f = plt.gcf()
+        f.clf()
+
+        ax = f.add_subplot(211)
+        self.plot_time_evolution()
+        ax.legend()
+
+        ax = f.add_subplot(212, sharex=ax)
+        self.plot_dndt()
+        ax.legend()
+        f.canvas.draw()
+
+    def check_spatial_derivatives(self):
+        f = plt.gcf()
+        f.clf()
+
+        ax = f.add_subplot(211)
+        self.plot_profiles()
+        ax.legend()
+
+        ax = f.add_subplot(212)
+        self.plot_dndr()
+        ax.legend()
+        f.canvas.draw()
+
+    def d_dr(self, times):
+        time_mask = (times[0] < self.time) & (self.time < times[1])
+        dndr = np.zeros_like(self.data[time_mask])
+        selected_time = self.time[time_mask]
+        for it, t in enumerate(selected_time):
+            y, dy = self._rho_derivative(it)
+            dndr[it, :] = dy
+
+        for ir, r in enumerate(self.rho):
+            signal = dndr[:, ir]
+            tt = np.array_split(selected_time, 5)
+            t = np.array([np.mean(i) for i in tt])
+            s = LSQUnivariateSpline(selected_time, signal, t, k=3)
+            dndr[:,ir] = s(selected_time)
+
+        return dndr
+
+    def d_dt(self, times):
+        time_mask = (times[0] < self.time) & (self.time < times[1])
+        selected_time = self.time[time_mask]
+        dndt = np.zeros_like(self.data[time_mask])
+        for ir, r in enumerate(self.rho):
+            y, dy = self._time_derivative(ir)
+            dndt[:, ir] = dy[time_mask]
+        return dndt
+
+    def n(self, times):
+        time_mask = (times[0] < self.time) & (self.time < times[1])
+        selected_time = self.time[time_mask]
+        n = np.zeros_like(self.data[time_mask])
+        for ir, r in enumerate(self.rho):
+            y, dy = self._time_derivative(ir)
+            n[:, ir] = y[time_mask]
+        return self.rho, selected_time, n
+
+
+class GradientFlux(object):
+    def __init__(self, smooth_data, time_bbox):
+        rho, time, n = smooth_data.n(time_bbox)
+        dndt = smooth_data.d_dt(time_bbox)
+        dndr = smooth_data.d_dr(time_bbox)
+
+        self.rho_vol = rho
+        self.time = time
+        self.dndt = dndt
+        self.dndr = dndr
+        self.n = n
+        self.time_bbox = time_bbox
+
+        self.gradient = dndr / n
+        self.flux = self.Gamma() / n
+
+    def Gamma(self):
+        """
+        Calculate the integral \int_0^r{ r' dndt dr'}.
+        """
+        r = self.rho_vol
+        dndt = self.dndt
+
+        f = -cumtrapz(dndt * r, r)
+        f /= r[:-1]
+
+        ret = np.zeros_like(dndt)
+        ret[:, 1:] = f
+        return ret
+
+    def plot_gf(self, rho_vol=0):
+        ax = plt.gca()
+
+        rho_index = np.searchsorted(self.rho_vol, rho_vol)
+        label = r'$\rho_\mathrm{vol}=%1.2f$' % self.rho_vol[rho_index]
         ax.plot(self.gradient[:,rho_index], self.flux[:, rho_index], '.',
-                label=str(inversion.rho[rho_index]))
+                label=label)
 
         D, v = self._fit_Dv(rho_index)
         x =  self.gradient[:,rho_index]
-        ax.plot(x, -D * x+ v)
+        ax.plot(x, -D * x + v)
+
+        ax.set_xlabel('$(\mathrm{d}n/\mathrm{d}r)/n$')
+        ax.set_ylabel('$\Gamma/n$')
 
     def _fit_Dv(self, rho_index):
         D, v = np.polyfit(self.gradient[:,rho_index], self.flux[:,rho_index], 1)
         D = -D
         return D, v
 
-    def Dv_profile(self, left=0, right=0.6):
-        D = []
-        v = []
-        r = []
+    def Dv_profile(self, left=0.2, right=0.5):
+        r, D, v = [], [], []
 
-        for i, rho in enumerate(self.impurity_density_exp.rho):
-            if rho < left or rho > right: continue
+        for i, rho in enumerate(self.rho_vol):
+            #if rho < left or rho > right: continue
             try:
                 D_, v_ = self._fit_Dv(i)
             except TypeError:
                 continue
 
-            r.append(inversion.rho[i])
+            #if D_ > 0:
+            r.append(rho)
             D.append(D_)
             v.append(v_)
 
@@ -193,17 +260,38 @@ class GradientFlux(object):
         return r, D, v
 
 
-def reconstruct_transport_coeffs(inversion, strahl_result):
+def from_strahl_result(inversion, strahl_result, parameters):
+    """
+    Reconstruct D, v profiles based on the method presented in Sertoli et al.
+    PPCF 2011.
+
+    Parameters
+    ----------
+    inversion : InversionData object
+        Tomographic inversion of soft X-ray emissivity on which the analysis
+        is based on.  The offset before the impurity injection must be already
+        removed.
+    strahl_result : dictionary
+        Result of a STRAHL simulation.
+    """
+
+    influx_bbox = parameters['influx_bbox']
+    background_bbox = parameters['background_bbox']
+
+    rho = inversion.rho
+    rho_vol = np.interp(rho, res['rho_poloidal_grid'], res['radius_grid'])
+    rho_pol = np.interp(rho, res['rho_poloidal_grid'], res['rho_poloidal_grid'])
+
     epsilon = epsilon_prime(strahl_result)
-    epsilon = epsilon_on_new_radius_grid(epsilon, inversion.rho)
+    epsilon = epsilon_on_new_radius_grid(epsilon, rho_pol)
 
-    impurity_density_exp = gti.InversionData(inversion.shot, inversion.rho,
+    impurity_density = gti.InversionData(inversion.shot, rho_vol,
             inversion.time, inversion.emissivity / epsilon[1])
+    impurity_density = remove_offset(impurity_density, background_bbox)
 
-    gf = GradientFlux(impurity_density_exp.select_time(0.52, 0.56))
-    r,D,v = gf.Dv_profile(left=0.0, right=0.6)
-
-    return r, D, v
+    s = DataSmoother(impurity_density)
+    gf = GradientFlux(s, influx_bbox)
+    return s, gf, epsilon
 
 
 if __name__ == '__main__':
@@ -212,20 +300,43 @@ if __name__ == '__main__':
     res = strahl.viz.read_results(of)
     inversion = gti.inverted_data(42661).select_time(0.5, 1.0)
 
-    r, D, v = reconstruct_transport_coeffs(inversion, res)
+    parameters = dict(
+            influx_bbox = (0.520, 0.56),
+            background_bbox = (0.50, 0.52),
+        )
 
-    plt.figure(10); plt.clf()
+    s, gf, epsilon = from_strahl_result(inversion, res, parameters)
+    r, D, v = gf.Dv_profile()
+    r = np.interp(r, res['radius_grid'], res['rho_poloidal_grid'])
+
+    plt.figure(21); plt.clf()
+    s.check_time_derivatives()
+    plt.axvspan(*gf.time_bbox, color='black', alpha=0.2)
+    plt.draw()
+
+    plt.figure(22); plt.clf()
+    s.check_spatial_derivatives()
+    plt.draw()
+
+    plt.figure(23); plt.clf()
+    gf.plot_gf(s.test_rho[0])
+    gf.plot_gf(s.test_rho[1])
+    gf.plot_gf(s.test_rho[2])
+    plt.legend(loc='best')
+    plt.draw()
+
+    plt.figure(24); plt.clf()
     plt.subplot(211)
-    plt.plot(r,D)
+    plt.plot(r, D)
+    plt.axhline(y=0, color='black')
 
     plt.subplot(212)
-    plt.plot(r,v)
-
+    plt.plot(r, v)
     plt.draw()
-    plt.show()
 
     np.savetxt('D_profile.txt', D)
     np.savetxt('r_profile.txt', r)
     np.savetxt('v_profile.txt', v)
 
+    plt.show()
 
