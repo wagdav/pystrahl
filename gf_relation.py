@@ -26,13 +26,14 @@ def epsilon_prime(res):
     maxpos = center.argmax()
     maxpos = np.unravel_index(maxpos, center.shape)
 
-    #if maxpos[1] != 0:
-    #    print 'Cannot find the maximal impurity density in the center'
-    #    print maxpos[1]
-    #    raise AssertionError
+    if maxpos[1] != 0:
+        print 'Cannot find the maximal impurity density in the center'
+        print maxpos[1]
+        raise AssertionError
 
     time_eq = maxpos[0]
 
+    print 't_eq=', time[time_eq]
     epsilonp = sxr[time_eq] / impdens[time_eq]
     return rho_pol, epsilonp
 
@@ -53,8 +54,8 @@ def epsilon_on_new_radius_grid(epsilon, inverted_rho):
 
 def remove_offset(inversion, time_bbox):
     time = inversion.time
-    time_mask = (time_bbox[0] < time) & (time < time_bbox[1])
-    offset = inversion.emissivity[time_mask,:]
+    time_mask = (time_bbox[0] <= time) & (time < time_bbox[1])
+    offset = inversion.emissivity[time_mask, :]
     offset = offset.mean(0)
     offset = offset[np.newaxis]
     new_emissivity = inversion.emissivity - offset
@@ -102,7 +103,7 @@ class DataSmoother(object):
         for i in np.searchsorted(self.rho, self.test_rho):
             y, dy = self._time_derivative(i)
             label = r'$\rho=%1.2f$' % self.rho[i]
-            line, = ax.plot(self.time, self.data[:,i], '-', label=label)
+            line, = ax.plot(self.time, self.data[:, i], '-', label=label)
             ax.plot(self.time, y, lw=2, color='black')
 
     def plot_dndt(self):
@@ -211,7 +212,6 @@ class GradientFlux(object):
         """
         r = self.rho_vol
         dndt = self.dndt
-
         f = -cumtrapz(dndt * r, r)
         f /= r[:-1]
 
@@ -302,7 +302,7 @@ if __name__ == '__main__':
 
     parameters = dict(
             influx_bbox = (0.520, 0.56),
-            background_bbox = (0.50, 0.52),
+            background_bbox = (0.50, 0.505),
         )
 
     s, gf, epsilon = from_strahl_result(inversion, res, parameters)
