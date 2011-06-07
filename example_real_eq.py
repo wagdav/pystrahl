@@ -128,10 +128,9 @@ def plot_chord_evolution(measured, simulated,
         label = str(c)
         y = yy[c]
 
-        line, = ax.plot(measured.time, measured.data[c],
-                label=label, lw=0.1)
+        line, = ax.plot(measured.time, measured.data[c], lw=0.1)
         ax.plot(t + time_offset, scaling_factor * y, lw=2,
-                color=line.get_color())
+                color=line.get_color(), label=label)
 
         maximum = np.max(y)
         ind = np.argmax(y)
