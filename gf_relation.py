@@ -66,7 +66,7 @@ class DataSmoother(object):
         self.rho = raw_data.rho
         self.data = raw_data.emissivity
 
-        self.test_rho = [0, 5, 10]
+        self.test_rho = [0, 5, 20]
         self.test_times = [0.52, 0.55]
         self.dt = dt
 
