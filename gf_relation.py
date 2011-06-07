@@ -26,21 +26,16 @@ def epsilon_prime(res):
     maxpos = center.argmax()
     maxpos = np.unravel_index(maxpos, center.shape)
 
-    if maxpos[1] != 0:
-        print 'Cannot find the maximal impurity density in the center'
-        print maxpos[1]
-        raise AssertionError
-
     time_eq = maxpos[0]
-
     print 't_eq=', time[time_eq]
+    assert np.all(impdens[time_eq] !=0)
     epsilonp = sxr[time_eq] / impdens[time_eq]
     return rho_pol, epsilonp
 
 
-def plot_epsilon_prime():
+def plot_epsilon_prime(epsilon):
     ax = plt.gca()
-    e_rho, e_data = epsilon_prime(res)
+    e_rho, e_data = epsilon
     ax.plot(e_rho, e_data.T)
     ax.set_xlabel(r'$\rho$')
     ax.set_ylabel(r"$\epsilon'$")
@@ -71,9 +66,22 @@ class DataSmoother(object):
         self.rho = raw_data.rho
         self.data = raw_data.emissivity
 
-        self.test_rho = [0, 5, 12]
+        self.test_rho = [0, 5, 10]
         self.test_times = [0.52, 0.55]
         self.dt = dt
+
+
+        dndt = np.zeros_like(self.data)
+        n = np.zeros_like(self.data)
+        for ir, r in enumerate(self.rho):
+            y, dy = self._time_derivative(ir)
+            n[:, ir] = y
+            dndt[:, ir] = dy
+
+        self.n = n
+        self.dndt = dndt
+        self.dndr = np.gradient(n)[1]/np.gradient(self.rho)
+        self.dndr[:,0] = 0
 
     def _time_derivative(self, rho_index):
         time = self.time
@@ -91,12 +99,6 @@ class DataSmoother(object):
         k_dt = dt // dt_sample
         pieces = len(time) // k_dt
         return pieces
-
-    def _rho_derivative(self, time_index):
-        rho = self.rho
-        y = self.data[time_index, :]
-        s = UnivariateSpline(rho, y, s=0)
-        return s(rho), s(rho,1)
 
     def plot_time_evolution(self):
         ax = plt.gca()
@@ -116,17 +118,18 @@ class DataSmoother(object):
     def plot_profiles(self):
         ax = plt.gca()
         for i in np.searchsorted(self.time, self.test_times):
-            y, dy = self._rho_derivative(i)
             label = r'$t=%1.2f\ \mathrm{s}$' % self.time[i]
             line, = ax.plot(self.rho, self.data[i,:], 'o', label=label)
-            ax.plot(self.rho, y, color='black')
+            ax.plot(self.rho, self.n[i,:], color='black')
+
+        ax.set_ylabel(r'$n_\mathrm{imp}$')
+        ax.set_xlabel(r'$\rho_\mathrm{vol}$')
 
     def plot_dndr(self):
         ax = plt.gca()
         for i in np.searchsorted(self.time, self.test_times):
-            y, dy = self._rho_derivative(i)
             label = r'$t=%1.2f\ \mathrm{s}$' % self.time[i]
-            line, = ax.plot(self.rho, dy, '-', label=label)
+            line, = ax.plot(self.rho, self.dndr[i,:], '-', label=label)
 
     def check_time_derivatives(self):
         f = plt.gcf()
@@ -155,44 +158,22 @@ class DataSmoother(object):
         f.canvas.draw()
 
     def d_dr(self, times):
-        time_mask = (times[0] < self.time) & (self.time < times[1])
-        dndr = np.zeros_like(self.data[time_mask])
-        selected_time = self.time[time_mask]
-        for it, t in enumerate(selected_time):
-            y, dy = self._rho_derivative(it)
-            dndr[it, :] = dy
-
-        for ir, r in enumerate(self.rho):
-            signal = dndr[:, ir]
-            tt = np.array_split(selected_time, 5)
-            t = np.array([np.mean(i) for i in tt])
-            s = LSQUnivariateSpline(selected_time, signal, t, k=3)
-            dndr[:,ir] = s(selected_time)
-
-        return dndr
+        time_mask = (times[0] <= self.time) & (self.time < times[1])
+        return self.dndr[time_mask]
 
     def d_dt(self, times):
-        time_mask = (times[0] < self.time) & (self.time < times[1])
-        selected_time = self.time[time_mask]
-        dndt = np.zeros_like(self.data[time_mask])
-        for ir, r in enumerate(self.rho):
-            y, dy = self._time_derivative(ir)
-            dndt[:, ir] = dy[time_mask]
-        return dndt
+        time_mask = (times[0] <= self.time) & (self.time < times[1])
+        return self.dndt[time_mask]
 
-    def n(self, times):
-        time_mask = (times[0] < self.time) & (self.time < times[1])
+    def smooth_n(self, times):
+        time_mask = (times[0] <= self.time) & (self.time < times[1])
         selected_time = self.time[time_mask]
-        n = np.zeros_like(self.data[time_mask])
-        for ir, r in enumerate(self.rho):
-            y, dy = self._time_derivative(ir)
-            n[:, ir] = y[time_mask]
-        return self.rho, selected_time, n
+        return self.rho, selected_time, self.n[time_mask]
 
 
 class GradientFlux(object):
     def __init__(self, smooth_data, time_bbox):
-        rho, time, n = smooth_data.n(time_bbox)
+        rho, time, n = smooth_data.smooth_n(time_bbox)
         dndt = smooth_data.d_dt(time_bbox)
         dndr = smooth_data.d_dr(time_bbox)
 
@@ -205,6 +186,9 @@ class GradientFlux(object):
 
         self.gradient = dndr / n
         self.flux = self.Gamma() / n
+
+        self.gradient *= 100 #[1/m]
+        self.flux /= 100 #[m/s]
 
     def Gamma(self):
         """
@@ -231,8 +215,9 @@ class GradientFlux(object):
         x =  self.gradient[:,rho_index]
         ax.plot(x, -D * x + v)
 
-        ax.set_xlabel('$(\mathrm{d}n/\mathrm{d}r)/n$')
-        ax.set_ylabel('$\Gamma/n$')
+        ax.set_xlabel('$(\mathrm{d}n/\mathrm{d}r)/n\ [\mathrm{1/m}]$')
+        ax.set_ylabel('$\Gamma/n\ [\mathrm{m/s}]$')
+        ax.plot([0],[0],'kx')
 
     def _fit_Dv(self, rho_index):
         D, v = np.polyfit(self.gradient[:,rho_index], self.flux[:,rho_index], 1)
@@ -249,14 +234,13 @@ class GradientFlux(object):
             except TypeError:
                 continue
 
-            #if D_ > 0:
             r.append(rho)
             D.append(D_)
             v.append(v_)
 
         r = np.array(r)
-        D = np.array(D) / 1e4
-        v = np.array(v) / 1e2
+        D = np.array(D)
+        v = np.array(v)
         return r, D, v
 
 
@@ -294,6 +278,13 @@ def from_strahl_result(inversion, strahl_result, parameters):
     return s, gf, epsilon
 
 
+def save_profiles(r, D, v):
+    mask = D > 0
+    np.savetxt('D_profile.txt', D[mask])
+    np.savetxt('r_profile.txt', r[mask])
+    np.savetxt('v_profile.txt', v[mask])
+
+
 if __name__ == '__main__':
     working_directory = './wk'
     of = os.path.join(working_directory, 'result', 'Arstrahl_result.dat')
@@ -301,13 +292,11 @@ if __name__ == '__main__':
     inversion = gti.inverted_data(42661).select_time(0.5, 1.0)
 
     parameters = dict(
-            influx_bbox = (0.520, 0.56),
-            background_bbox = (0.50, 0.505),
-        )
+        influx_bbox = (0.520, 0.55),
+        background_bbox = (0.50, 0.505),
+    )
 
     s, gf, epsilon = from_strahl_result(inversion, res, parameters)
-    r, D, v = gf.Dv_profile()
-    r = np.interp(r, res['radius_grid'], res['rho_poloidal_grid'])
 
     plt.figure(21); plt.clf()
     s.check_time_derivatives()
@@ -318,25 +307,27 @@ if __name__ == '__main__':
     s.check_spatial_derivatives()
     plt.draw()
 
+    r, D, v = gf.Dv_profile()
+    r = np.interp(r, res['radius_grid'], res['rho_poloidal_grid'])
+
     plt.figure(23); plt.clf()
-    gf.plot_gf(s.test_rho[0])
-    gf.plot_gf(s.test_rho[1])
-    gf.plot_gf(s.test_rho[2])
+    for rho in s.test_rho:
+        gf.plot_gf(rho)
     plt.legend(loc='best')
     plt.draw()
 
     plt.figure(24); plt.clf()
     plt.subplot(211)
-    plt.plot(r, D)
+    plt.plot(r, D, '-o')
     plt.axhline(y=0, color='black')
 
     plt.subplot(212)
     plt.plot(r, v)
     plt.draw()
 
-    np.savetxt('D_profile.txt', D)
-    np.savetxt('r_profile.txt', r)
-    np.savetxt('v_profile.txt', v)
+    plt.figure(25); plt.clf()
+    plot_epsilon_prime(epsilon)
 
+    save_profiles(r, D, v)
     plt.show()
 
