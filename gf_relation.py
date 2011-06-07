@@ -27,7 +27,7 @@ def epsilon_prime(res):
     maxpos = np.unravel_index(maxpos, center.shape)
 
     time_eq = maxpos[0]
-    print 't_eq=', time[time_eq]
+    print 't_eq=', time[time_eq], '(%d)' % time_eq
     assert np.all(impdens[time_eq] !=0)
     epsilonp = sxr[time_eq] / impdens[time_eq]
     return rho_pol, epsilonp
@@ -224,11 +224,11 @@ class GradientFlux(object):
         D = -D
         return D, v
 
-    def Dv_profile(self, left=0.2, right=0.5):
+    def Dv_profile(self, left=0., right=14):
         r, D, v = [], [], []
 
         for i, rho in enumerate(self.rho_vol):
-            #if rho < left or rho > right: continue
+            if rho < left or rho > right: continue
             try:
                 D_, v_ = self._fit_Dv(i)
             except TypeError:
@@ -258,13 +258,14 @@ def from_strahl_result(inversion, strahl_result, parameters):
     strahl_result : dictionary
         Result of a STRAHL simulation.
     """
-
     influx_bbox = parameters['influx_bbox']
     background_bbox = parameters['background_bbox']
 
     rho = inversion.rho
-    rho_vol = np.interp(rho, res['rho_poloidal_grid'], res['radius_grid'])
-    rho_pol = np.interp(rho, res['rho_poloidal_grid'], res['rho_poloidal_grid'])
+    rho_vol = np.interp(rho, strahl_result['rho_poloidal_grid'],
+            strahl_result['radius_grid'])
+    rho_pol = np.interp(rho, strahl_result['rho_poloidal_grid'],
+            strahl_result['rho_poloidal_grid'])
 
     epsilon = epsilon_prime(strahl_result)
     epsilon = epsilon_on_new_radius_grid(epsilon, rho_pol)
@@ -292,7 +293,7 @@ if __name__ == '__main__':
     inversion = gti.inverted_data(42661).select_time(0.5, 1.0)
 
     parameters = dict(
-        influx_bbox = (0.520, 0.55),
+        influx_bbox = (0.515, 0.55),
         background_bbox = (0.50, 0.505),
     )
 
@@ -308,7 +309,6 @@ if __name__ == '__main__':
     plt.draw()
 
     r, D, v = gf.Dv_profile()
-    r = np.interp(r, res['radius_grid'], res['rho_poloidal_grid'])
 
     plt.figure(23); plt.clf()
     for rho in s.test_rho:
@@ -322,12 +322,13 @@ if __name__ == '__main__':
     plt.axhline(y=0, color='black')
 
     plt.subplot(212)
-    plt.plot(r, v)
+    plt.plot(r, v, '-o')
     plt.draw()
 
     plt.figure(25); plt.clf()
     plot_epsilon_prime(epsilon)
 
+    r = np.interp(r, res['radius_grid'], res['rho_poloidal_grid'])
     save_profiles(r, D, v)
     plt.show()
 
