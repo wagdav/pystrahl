@@ -23,22 +23,6 @@ def get_rho_volume(eq):
     return rho_vol, rho_vol_LCFS
 
 
-def velocity_from_zero_flux(rho, D, ne, eq):
-    """
-    >>> rho = np.linspace(0,1,20)
-    >>> D = rho**2 + 0.02
-    >>> ne = 1e20 * (1 -rho**2) + 1e18
-    >>> v = velocity_from_zero_flux(rho, D, ne)
-    """
-    grho = eq.get_grho(rho)
-    dne = np.gradient(ne, np.diff(rho)[0])
-
-    v = 100 * D * grho * dne/ne
-
-    v[rho > 0.9] = 0
-    return v
-
-
 def plot_geometry():
     f = plt.figure()
     ax = f.add_subplot(111)
@@ -70,7 +54,7 @@ def plot_chord_evolution(measured, simulated,
         label = str(c)
         y = yy[c]
 
-        line, = ax.plot(measured.time, measured.data[c], lw=0.1)
+        line, = ax.plot(measured.time, measured.data[c], lw=0.5)
         ax.plot(t + time_offset, scaling_factor * y, lw=2,
                 color=line.get_color(), label=label)
 
@@ -137,18 +121,18 @@ class StrahlSimulation(object):
         params = strahl.defaultParams()
 
         t, flx = strahl.rectangular_pulse_with_decay(length=5e-3,
-                max_value=5.0e24, tau=160e-3)
+                max_value=5.0e18, tau=100e-3)
 
         params['impurity.influx'] = (t, flx)
         params['numerical.time.dt'] = 3e-4
-        params['numerical.time.final'] = 0.6
-        params['numerical.grid.k'] = 8
+        params['numerical.time.final'] = 0.5
+        params['numerical.grid.k'] = 10
 
         rho_vol, rho_vol_LCFS = get_rho_volume(eq)
         rho_pol = np.linspace(0,1,20)
 
-        _, ne = thomson_data.fit_density(rho_pol)
-        _, Te = thomson_data.fit_temperature(rho_pol)
+        _, ne = thomson_data.fit_density(rho_pol, pieces=4)
+        _, Te = thomson_data.fit_temperature(rho_pol, pieces=4)
         ne /= 1e6
 
         if from_file:
@@ -160,11 +144,9 @@ class StrahlSimulation(object):
 
             v[0] = 0.
         else:
-            D = 1* rho_pol**2 + 0.001
-            D = 10 * np.ones_like(rho_pol)
-            v = np.zeros_like(D)
-            v = velocity_from_zero_flux(rho_pol, D, ne, eq)
-            v = -150 * np.ones_like(rho_pol)
+            f_D = strahl.modified_gauss(6, 2, 1.9, 0.4, 0.05, 0.8)
+            D = f_D(rho_pol)
+            v = strahl.velocity_from_zero_flux(rho_vol, rho_pol, D, ne)
 
         params['geometry.rho_volume'] = rho_vol * 100
         params['background.rho_poloidal'] = rho_pol
@@ -177,10 +159,10 @@ class StrahlSimulation(object):
         params['impurity.convection_velocity'] = v
         params['impurity.diffusion_coefficient'] = D
 
-        strahl.create_input(params, working_directory)
         self.params = params
 
     def run(self):
+        strahl.create_input(self.params, working_directory)
         curdir = os.getcwd()
         os.chdir(working_directory)
         os.system('./strahl a')
@@ -223,30 +205,53 @@ class StrahlSimulation(object):
         v = self.params['impurity.convection_velocity']
         r = self.params['background.rho_poloidal']
         plot_Dv(r, D, v)
+        plt.draw()
+
         for i in xrange(loop): # GF-loop
             self.run()
 
             s, gf, epsilon = gf_relation.from_strahl_result(inversion,
                     self.result, self.gf_parameters)
-            r, D, v = gf.Dv_profile()
-
-            r = np.interp(r, self.result['radius_grid'],
-                    self.result['rho_poloidal_grid'])
-            gf_relation.save_profiles(r, D, v)
+            rho_pol, D, v = gf.Dv_profile()
+            gf_relation.save_profiles(rho_pol, D, v, (0, 0.6))
 
             self.setup(from_file=True)
 
             plt.figure(100)
-            plot_Dv(r, D, v)
+            plot_Dv(rho_pol, D, v)
             plt.draw()
 
         self.gf = gf
+
+    def get_D(self):
+        return self.params['impurity.diffusion_coefficient']
+
+    def set_D(self, function):
+        D = function(self.rho_pol)
+        self.params['impurity.diffusion_coefficient'] = D
+
+        # set the convection velocity according to the zero flux condition
+        """
+        ne = self.params['background.electron_density']
+        grho = self.equilibrium.get_grho(self.rho_pol)
+        rho_vol = self.params['geometry.rho_volume'] *\
+            self.params['geometry.rho_volume_at_lcfs']
+        v = strahl.velocity_from_zero_flux(rho_vol, D, ne, grho)
+        self.params['impurity.convection_velocity'] = v
+        """
+
+    def get_rho_pol(self):
+        return self.params['background.rho_poloidal']
+
+    D = property(get_D, set_D)
+    rho_pol = property(get_rho_pol)
 
 
 def plot_Dv(r, D, v):
     fig = plt.gcf()
     ax = fig.add_subplot(211)
     ax.plot(r, D, '-o')
+    ax.set_ylim(ymin=0)
     ax.axhline(y=0, color='black')
     ax.set_title('D,v control panel')
 
@@ -284,16 +289,28 @@ db = {
         background_bbox = (0.5, 0.505),
         influx_bbox = (0.515, 0.55),
     ),
-    42314 : dict( #density ne = 1fr, Ip = 125 kA 
+    42314 : dict( #density ne = 1fr, Ip = 125 kA
         time_bbox = (0.7, 1.0),
         background_bbox = (0.7, 0.705),
         influx_bbox = (0.715, 0.75),
-    )
+    ),
+    42313 : dict( #density ne = 1fr, Ip = 300 kA
+        time_bbox = (0.7, 1.0),
+        background_bbox = (0.7, 0.705),
+        influx_bbox = (0.715, 0.75),
+    ),
+    42310 : dict( #density ne = 1fr, Ip = 300 kA
+        time_bbox = (0.6, 1.0),
+        background_bbox = (0.6, 0.605),
+        influx_bbox = (0.615, 0.65),
+    ),
+
 }
 
 try:
     sim
 except NameError:
-    sim = simulation_from_shot(42661)
+    lo_ip = simulation_from_shot(42314)
+    hi_ip = simulation_from_shot(42313)
 
 plt.show()

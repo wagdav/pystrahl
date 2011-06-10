@@ -66,8 +66,8 @@ class DataSmoother(object):
         self.rho = raw_data.rho
         self.data = raw_data.emissivity
 
-        self.test_rho = [0, 5, 20]
-        self.test_times = [0.52, 0.55]
+        self.test_rho = [0, 0.3, 0.6, 0.8]
+        self.test_times = [0.72, 0.75]
         self.dt = dt
 
 
@@ -81,6 +81,7 @@ class DataSmoother(object):
         self.n = n
         self.dndt = dndt
         self.dndr = np.gradient(n)[1]/np.gradient(self.rho)
+
         self.dndr[:,0] = 0
 
     def _time_derivative(self, rho_index):
@@ -172,19 +173,20 @@ class DataSmoother(object):
 
 
 class GradientFlux(object):
-    def __init__(self, smooth_data, time_bbox):
+    def __init__(self, smooth_data, time_bbox, rho_pol=None):
         rho, time, n = smooth_data.smooth_n(time_bbox)
         dndt = smooth_data.d_dt(time_bbox)
         dndr = smooth_data.d_dr(time_bbox)
 
         self.rho_vol = rho
+        self.rho_pol = rho_pol
         self.time = time
         self.dndt = dndt
         self.dndr = dndr
         self.n = n
         self.time_bbox = time_bbox
 
-        self.gradient = dndr / n
+        self.gradient = - dndr / n
         self.flux = self.Gamma() / n
 
         self.gradient *= 100 #[1/m]
@@ -203,32 +205,39 @@ class GradientFlux(object):
         ret[:, 1:] = f
         return ret
 
-    def plot_gf(self, rho_vol=0):
+    def plot_gf(self, rho=0):
         ax = plt.gca()
 
-        rho_index = np.searchsorted(self.rho_vol, rho_vol)
-        label = r'$\rho_\mathrm{vol}=%1.2f$' % self.rho_vol[rho_index]
+        rho_index = np.searchsorted(self.rho_pol, rho)
+        label = r'$\rho_\mathrm{pol}=%1.2f$, ' % self.rho_pol[rho_index]
+        label += r'$\rho_\mathrm{vol}=%1.2f$' % self.rho_vol[rho_index]
         ax.plot(self.gradient[:,rho_index], self.flux[:, rho_index], '.',
                 label=label)
 
         D, v = self._fit_Dv(rho_index)
         x =  self.gradient[:,rho_index]
-        ax.plot(x, -D * x + v)
+        ax.plot(x, D * x + v)
 
-        ax.set_xlabel('$(\mathrm{d}n/\mathrm{d}r)/n\ [\mathrm{1/m}]$')
+        ax.set_xlabel('$-(\mathrm{d}n/\mathrm{d}r)/n\ [\mathrm{1/m}]$')
         ax.set_ylabel('$\Gamma/n\ [\mathrm{m/s}]$')
         ax.plot([0],[0],'kx')
 
+        indices = [0, -1]
+        texts = [ r'$t_\mathrm{b}$', r'$t_\mathrm{e}$']
+        for index, text in zip(indices, texts):
+            xy = (self.gradient[index, rho_index], self.flux[index, rho_index])
+            ax.annotate(text, xy)
+        ax.legend()
+
     def _fit_Dv(self, rho_index):
-        D, v = np.polyfit(self.gradient[:,rho_index], self.flux[:,rho_index], 1)
-        D = -D
+        D, v = np.polyfit(self.gradient[:, rho_index],
+                self.flux[:, rho_index], 1)
         return D, v
 
-    def Dv_profile(self, left=0., right=14):
+    def Dv_profile(self):
         r, D, v = [], [], []
 
-        for i, rho in enumerate(self.rho_vol):
-            if rho < left or rho > right: continue
+        for i, rho in enumerate(self.rho_pol):
             try:
                 D_, v_ = self._fit_Dv(i)
             except TypeError:
@@ -275,12 +284,12 @@ def from_strahl_result(inversion, strahl_result, parameters):
     impurity_density = remove_offset(impurity_density, background_bbox)
 
     s = DataSmoother(impurity_density)
-    gf = GradientFlux(s, influx_bbox)
+    gf = GradientFlux(s, influx_bbox, rho_pol=rho_pol)
     return s, gf, epsilon
 
 
-def save_profiles(r, D, v):
-    mask = D > 0
+def save_profiles(r, D, v, limits=(0,1)):
+    mask = (limits[0] < r) & (r < limits[1]) & (D > 0)
     np.savetxt('D_profile.txt', D[mask])
     np.savetxt('r_profile.txt', r[mask])
     np.savetxt('v_profile.txt', v[mask])
@@ -290,11 +299,10 @@ if __name__ == '__main__':
     working_directory = './wk'
     of = os.path.join(working_directory, 'result', 'Arstrahl_result.dat')
     res = strahl.viz.read_results(of)
-    inversion = gti.inverted_data(42661).select_time(0.5, 1.0)
-
+    inversion = gti.inverted_data(42314).select_time(0.7, 1.0)
     parameters = dict(
-        influx_bbox = (0.515, 0.55),
-        background_bbox = (0.50, 0.505),
+        influx_bbox = (0.721, 0.75),
+        background_bbox = (0.70, 0.705),
     )
 
     s, gf, epsilon = from_strahl_result(inversion, res, parameters)
@@ -323,12 +331,12 @@ if __name__ == '__main__':
 
     plt.subplot(212)
     plt.plot(r, v, '-o')
+    plt.axhline(y=0, color='black')
     plt.draw()
 
     plt.figure(25); plt.clf()
     plot_epsilon_prime(epsilon)
 
-    r = np.interp(r, res['radius_grid'], res['rho_poloidal_grid'])
     save_profiles(r, D, v)
     plt.show()
 
