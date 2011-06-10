@@ -250,7 +250,12 @@ class GradientFlux(object):
         r = np.array(r)
         D = np.array(D)
         v = np.array(v)
-        return r, D, v
+
+        p = ppfit.ppolyfit(r, D, pieces=6, left=(0, [0,0]))
+        Ds = ppfit.ppolyval(p, r)
+        p = ppfit.ppolyfit(r, v, pieces=6, left=(0, [0,0]))
+        vs = ppfit.ppolyval(p, r)
+        return r, Ds, vs
 
 
 def from_strahl_result(inversion, strahl_result, parameters):
