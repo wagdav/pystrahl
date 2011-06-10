@@ -73,17 +73,33 @@ def constant(a):
     return np.vectorize(lambda x: a)
 
 
-def velocity_from_zero_flux(rho, D, ne):
+def velocity_from_zero_flux(rho_vol, rho_pol, D, ne):
     """
-    >>> rho = np.linspace(0,1,20)
-    >>> D = rho**2 + 0.02
-    >>> ne = 1e20 * (1 -rho**2) + 1e18
-    >>> v = velocity_from_zero_flux(rho, D, ne)
-    """
-    dne = np.gradient(ne)/np.gradient(rho)
-    v = 100 * D * dne/ne
+    >>> rho_pol = np.linspace(0,1,100)
+    >>> rho_vol = 88 * rho_pol # rho_vol for circular cross section
+    >>> D = modified_gauss(6, 2, 1.9, 0.4, 0.05, 0.8)(rho_pol)
+    >>> ne = 1e20 * (1 - rho_pol**2) + 1e18
+    >>> v = velocity_from_zero_flux(rho_vol, rho_pol, D, ne)
 
-    v[rho > 0.9] = 0
+    Illustration
+    ------------
+    >>> import matplotlib.pyplot as plt
+    >>> plt.figure(); plt.clf()
+    >>> plt.subplot(211)
+    >>> plt.plot(rho_pol, D,'.-')
+    >>> plt.subplot(212)
+    >>> plt.plot(rho_pol, v, '.-')
+    >>> plt.show()
+    """
+    dne = np.gradient(ne) / np.gradient(rho_vol)
+    v = D * dne/ne
+
+    outside_mask = rho_pol >= 0.9
+
+    x = rho_vol[outside_mask] - rho_vol[outside_mask][0]
+    x /= 3
+    vmax = v[outside_mask][0]
+    v[outside_mask] = vmax * np.exp(-x**2)
     return v
 
 
