@@ -13,7 +13,7 @@ cv    shot      index
 
 GRID POINTS AND ITERATION
 cv     rho = r**K (->K)      number of grid points, dr_center(cm), dr_edge(cm)
- %(numerical.grid.k)f %(numerical.grid.radial_points)d 0.1 0.1
+ %(numerical.grid.k)f %(numerical.grid.radial_points)d 0.1 0.05
 
    max. iterations     stop iteration       1=iteration,2=no iteration
 cv at fixed time      if change below(%%)  ion/rec-step
