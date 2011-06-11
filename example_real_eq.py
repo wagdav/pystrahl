@@ -121,7 +121,7 @@ class StrahlSimulation(object):
         params = strahl.defaultParams()
 
         t, flx = strahl.rectangular_pulse_with_decay(length=5e-3,
-                max_value=5.0e18, tau=100e-3)
+                max_value=5.0e18, tau=50e-3)
 
         params['impurity.influx'] = (t, flx)
         params['numerical.time.dt'] = 3e-4
@@ -188,7 +188,7 @@ class StrahlSimulation(object):
         chords = [32, 36, 25]
         simulated_chords = syntetic_chords(strahl_result, eq, chords)
         plot_chord_evolution(dmpx_data, simulated_chords, chords,
-                time_offset=0.015)
+                time_offset=0.010)
         plt.ylim(ymin=0)
         plt.legend()
         plt.draw()
@@ -213,7 +213,7 @@ class StrahlSimulation(object):
             s, gf, epsilon = gf_relation.from_strahl_result(inversion,
                     self.result, self.gf_parameters)
             rho_pol, D, v = gf.Dv_profile()
-            gf_relation.save_profiles(rho_pol, D, v, (0, 0.6))
+            gf_relation.save_profiles(rho_pol, D, v)
 
             self.setup(from_file=True)
 
@@ -251,7 +251,6 @@ def plot_Dv(r, D, v):
     fig = plt.gcf()
     ax = fig.add_subplot(211)
     ax.plot(r, D, '-o')
-    ax.set_ylim(ymin=0)
     ax.axhline(y=0, color='black')
     ax.set_title('D,v control panel')
 
@@ -304,7 +303,11 @@ db = {
         background_bbox = (0.6, 0.605),
         influx_bbox = (0.615, 0.65),
     ),
-
+    42462 : dict( #density ne = 1fr, Ip = 125 kA, ECH
+        time_bbox = (0.7, 1.0),
+        background_bbox = (0.7, 0.705),
+        influx_bbox = (0.715, 0.75),
+    ),
 }
 
 try:

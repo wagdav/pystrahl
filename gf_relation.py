@@ -186,7 +186,7 @@ class GradientFlux(object):
         self.n = n
         self.time_bbox = time_bbox
 
-        self.gradient = - dndr / n
+        self.gradient = dndr / n
         self.flux = self.Gamma() / n
 
         self.gradient *= 100 #[1/m]
@@ -216,9 +216,9 @@ class GradientFlux(object):
 
         D, v = self._fit_Dv(rho_index)
         x =  self.gradient[:,rho_index]
-        ax.plot(x, D * x + v)
+        ax.plot(x, -D * x + v)
 
-        ax.set_xlabel('$-(\mathrm{d}n/\mathrm{d}r)/n\ [\mathrm{1/m}]$')
+        ax.set_xlabel('$(\mathrm{d}n/\mathrm{d}r)/n\ [\mathrm{1/m}]$')
         ax.set_ylabel('$\Gamma/n\ [\mathrm{m/s}]$')
         ax.plot([0],[0],'kx')
 
@@ -230,14 +230,33 @@ class GradientFlux(object):
         ax.legend()
 
     def _fit_Dv(self, rho_index):
-        D, v = np.polyfit(self.gradient[:, rho_index],
-                self.flux[:, rho_index], 1)
+        flux = self.flux[:, rho_index]
+        gradient = self.gradient[:, rho_index]
+    
+        range_flux = (max(flux) - min(flux))/ np.mean(flux)
+        range_gradient = (max(gradient) - min(gradient)) / np.mean(gradient)
+        switch = abs(range_flux) > abs(range_gradient)
+        switch = False
+        if switch:
+            x,y = flux, gradient
+        else:
+            x,y = gradient, flux
+        a, b = np.polyfit(x, y, 1)
+
+        print switch, rho_index
+        if switch:
+            D = - 1.0/a
+            v = b * D
+        else:
+            D = - a
+            v = b
         return D, v
 
     def Dv_profile(self):
         r, D, v = [], [], []
 
         for i, rho in enumerate(self.rho_pol):
+            if i == 0: continue
             try:
                 D_, v_ = self._fit_Dv(i)
             except TypeError:
@@ -251,6 +270,10 @@ class GradientFlux(object):
         D = np.array(D)
         v = np.array(v)
 
+        r, D, v = self._smooth_Dv(r, D, v)
+        return r, D, v
+
+    def _smooth_Dv(self, r, D, v):
         p = ppfit.ppolyfit(r, D, pieces=6, left=(0, [0,0]))
         Ds = ppfit.ppolyval(p, r)
         p = ppfit.ppolyfit(r, v, pieces=6, left=(0, [0,0]))
