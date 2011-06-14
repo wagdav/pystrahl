@@ -61,14 +61,15 @@ def remove_offset(inversion, time_bbox):
 
 
 class DataSmoother(object):
-    def __init__(self, raw_data, dt=0.015):
+    def __init__(self, raw_data, dt=0.015, rho_pol=None):
         self.time = raw_data.time
         self.rho = raw_data.rho
         self.data = raw_data.emissivity
 
-        self.test_rho = [0, 0.3, 0.6, 0.8]
+        self.test_rho = [0.1, 0.35, 0.5]
         self.test_times = [0.72, 0.75]
         self.dt = dt
+        self.rho_pol = rho_pol
 
 
         dndt = np.zeros_like(self.data)
@@ -103,17 +104,19 @@ class DataSmoother(object):
 
     def plot_time_evolution(self):
         ax = plt.gca()
-        for i in np.searchsorted(self.rho, self.test_rho):
+        for i in np.searchsorted(self.rho_pol, self.test_rho):
             y, dy = self._time_derivative(i)
-            label = r'$\rho=%1.2f$' % self.rho[i]
+            label = r'$\rho=%1.2f$' % self.rho_pol[i]
             line, = ax.plot(self.time, self.data[:, i], '-', label=label)
             ax.plot(self.time, y, lw=2, color='black')
+            ax.set_ylabel(r'$n^\mathrm{sxr}_\mathrm{imp}\ [\mathrm{m^{-3}}]$')
+            ax.set_xlabel(r'$t\ [\mathrm{s}]$')
 
     def plot_dndt(self):
         ax = plt.gca()
-        for i in np.searchsorted(self.rho, self.test_rho):
+        for i in np.searchsorted(self.rho_pol, self.test_rho):
             y, dy = self._time_derivative(i)
-            label = r'$\rho=%1.2f$' % self.rho[i]
+            label = r'$\rho=%1.2f$' % self.rho_pol[i]
             ax.plot(self.time, dy, label=label)
 
     def plot_profiles(self):
@@ -136,14 +139,14 @@ class DataSmoother(object):
         f = plt.gcf()
         f.clf()
 
-        ax = f.add_subplot(211)
+        ax = f.add_subplot(111)
         self.plot_time_evolution()
         ax.legend()
 
-        ax = f.add_subplot(212, sharex=ax)
-        self.plot_dndt()
-        ax.legend()
-        f.canvas.draw()
+        #ax = f.add_subplot(212, sharex=ax)
+        #self.plot_dndt()
+        #ax.legend()
+        #f.canvas.draw()
 
     def check_spatial_derivatives(self):
         f = plt.gcf()
@@ -311,7 +314,7 @@ def from_strahl_result(inversion, strahl_result, parameters):
             inversion.time, inversion.emissivity / epsilon[1])
     impurity_density = remove_offset(impurity_density, background_bbox)
 
-    s = DataSmoother(impurity_density)
+    s = DataSmoother(impurity_density, rho_pol=rho_pol)
     gf = GradientFlux(s, influx_bbox, rho_pol=rho_pol)
     return s, gf, epsilon
 
@@ -329,7 +332,7 @@ if __name__ == '__main__':
     res = strahl.viz.read_results(of)
     inversion = gti.inverted_data(42314).select_time(0.7, 1.0)
     parameters = dict(
-        influx_bbox = (0.721, 0.75),
+        influx_bbox = (0.725, 0.75),
         background_bbox = (0.70, 0.705),
     )
 

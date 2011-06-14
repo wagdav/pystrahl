@@ -44,37 +44,47 @@ def set_xaxis_rho():
 
 def plot_overview(res):
     shape_ = (4,4)
-    # first column
+
+    # first row
     ax = plt.subplot2grid(shape_, (0,0), colspan=2)
-    plot_influx_through_valve(res)
+    plot_electron_density(res)
+    ax = plt.subplot2grid(shape_, (0,2), colspan=2)
+    plot_electron_temperature(res)
+    ax.yaxis.set_label_position('right')
+    ax.yaxis.set_ticks_position('right')
 
+    # second row
     ax = plt.subplot2grid(shape_, (1,0), colspan=2)
+    plot_influx_through_valve(res)
+    ax = plt.subplot2grid(shape_, (1,2), colspan=2)
     plot_volume(res)
+    ax.yaxis.set_label_position('right')
+    ax.yaxis.set_ticks_position('right')
 
+    # third row
     ax = plt.subplot2grid(shape_, (2,0), colspan=2)
+    plot_diffusion(res)
+
+    ax = plt.subplot2grid(shape_, (2,2), colspan=2)
+    plot_pinch(res)
+    ax.yaxis.set_label_position('right')
+    ax.yaxis.set_ticks_position('right')
+
+    # fourth row
+    ax = plt.subplot2grid(shape_, (3,0), colspan=2)
     plot_total_impurity_density(res)
     decimate_plotted_lines()
 
-    ax = plt.subplot2grid(shape_, (3,0), colspan=2)
+    ax = plt.subplot2grid(shape_, (3,2), colspan=2)
     plot_sxr(res)
     decimate_plotted_lines()
-
-    # second column
-    ax = plt.subplot2grid(shape_, (0,2), colspan=2)
-    plot_diffusion(res)
-
-    ax = plt.subplot2grid(shape_, (1,2), colspan=2)
-    plot_pinch(res)
-
-    ax = plt.subplot2grid(shape_, (2,2), colspan=2)
-    plot_electron_density(res)
-
-    ax = plt.subplot2grid(shape_, (3,2), colspan=2, sharex=ax)
-    plot_electron_temperature(res)
-
-    plt.subplots_adjust(left=0.07, right=0.93, top=0.93, bottom=0.07,
-            wspace=0.45, hspace=0.25)
-
+    ax.yaxis.set_label_position('right')
+    ax.yaxis.set_ticks_position('right')
+    yfmt = ax.yaxis.get_major_formatter()
+    yfmt.set_powerlimits((-3,4))
+    #plt.subplots_adjust(left=0.07, right=0.93, top=0.93, bottom=0.07,
+    #        wspace=0.45, hspace=0.25)
+ 
 
 def plot_background(res):
     plt.clf()

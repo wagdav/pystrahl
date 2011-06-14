@@ -44,19 +44,21 @@ def syntetic_chords(strahl_result, equilibrim, chord_indices):
 
 
 def plot_chord_evolution(measured, simulated,
-        chord_indices=[32], time_offset=0.0):
+        chord_indices=[31], time_offset=0.0, plot_measured=True):
     t, yy = simulated
     time_offset += measured.time[0]
-    scaling_factor = measured.central_max() / yy[32].max()
+    scaling_factor = measured.central_max() / yy[31].max()
 
     ax = plt.gca()
     for c in chord_indices:
         label = str(c)
         y = yy[c]
 
-        line, = ax.plot(measured.time, measured.data[c], lw=0.5)
-        ax.plot(t + time_offset, scaling_factor * y, lw=2,
-                color=line.get_color(), label=label)
+        line, = ax.plot(t + time_offset, scaling_factor * y, lw=2,
+                label=label) #simulated signal
+        if plot_measured:
+            ax.plot(measured.time, measured.data[c], lw=0.5,
+                    color=line.get_color())
 
         maximum = np.max(y)
         ind = np.argmax(y)
@@ -74,7 +76,7 @@ class DMPX_data(object):
             raise AssertionError('Size mismatch')
 
     def central_max(self):
-        central_chord = 32
+        central_chord = 31
         t, y = self._smooth_chord(central_chord)
         return max(y)
 
@@ -119,14 +121,11 @@ class StrahlSimulation(object):
         eq = self.equilibrium
         thomson_data = self.thomson_data
         params = strahl.defaultParams()
+        self.params = params
 
-        t, flx = strahl.rectangular_pulse_with_decay(length=5e-3,
-                max_value=5.0e18, tau=50e-3)
-
-        params['impurity.influx'] = (t, flx)
-        params['numerical.time.dt'] = 3e-4
         params['numerical.time.final'] = 0.5
         params['numerical.grid.k'] = 10
+        params['numerical.time.dt'] = 3e-4
 
         rho_vol, rho_vol_LCFS = get_rho_volume(eq)
         rho_pol = np.linspace(0,1,20)
@@ -147,6 +146,7 @@ class StrahlSimulation(object):
             f_D = strahl.modified_gauss(6, 2, 1.9, 0.4, 0.05, 0.8)
             D = f_D(rho_pol)
             v = strahl.velocity_from_zero_flux(rho_vol, rho_pol, D, ne)
+            self.tau=50e-3
 
         params['geometry.rho_volume'] = rho_vol * 100
         params['background.rho_poloidal'] = rho_pol
@@ -159,7 +159,6 @@ class StrahlSimulation(object):
         params['impurity.convection_velocity'] = v
         params['impurity.diffusion_coefficient'] = D
 
-        self.params = params
 
     def run(self):
         strahl.create_input(self.params, working_directory)
@@ -171,28 +170,33 @@ class StrahlSimulation(object):
         of = os.path.join(working_directory,'result','Arstrahl_result.dat')
         self.result = strahl.viz.read_results(of)
 
-    def viz(self, offset=0):
+    def viz(self, offset=0, time_offset=0):
         offset *= 10
 
-        strahl_result = self.result
-        eq = self.equilibrium
-        dmpx_data = self.dmpx_data
-
         plt.figure(offset + 1); plt.clf()
-        strahl.viz.plot_overview(strahl_result)
+        self.plot_overview()
         plt.draw()
 
         plt.figure(offset + 2); plt.clf()
         ax = plt.gcf().add_subplot(111)
+        self.plot_syntetic_chords(time_offset=time_offset)
 
-        chords = [32, 36, 25]
-        simulated_chords = syntetic_chords(strahl_result, eq, chords)
-        plot_chord_evolution(dmpx_data, simulated_chords, chords,
-                time_offset=0.010)
-        plt.ylim(ymin=0)
-        plt.legend()
         plt.draw()
 
+    def plot_overview(self):
+        strahl.viz.plot_overview(self.result)
+
+    def plot_syntetic_chords(self, plot_measured=True, time_offset=0):
+        strahl_result = self.result
+        eq = self.equilibrium
+        dmpx_data = self.dmpx_data
+        chords = [31, 36, 25]
+        simulated_chords = syntetic_chords(strahl_result, eq, chords)
+        plot_chord_evolution(dmpx_data, simulated_chords, chords,
+                time_offset=time_offset, plot_measured=plot_measured)
+        plt.ylim(ymin=0)
+        plt.legend()
+ 
     def gf_loop(self, loop=3, resume=False):
         assert self.inversion is not None, 'Inversion data is missing.'
         if not resume:
@@ -225,6 +229,9 @@ class StrahlSimulation(object):
 
     def get_D(self):
         return self.params['impurity.diffusion_coefficient']
+    
+    def get_v(self):
+        return self.params['impurity.convection_velocity']
 
     def set_D(self, function):
         D = function(self.rho_pol)
@@ -243,8 +250,39 @@ class StrahlSimulation(object):
     def get_rho_pol(self):
         return self.params['background.rho_poloidal']
 
+
+    def plot_Dv(self):
+        fig = plt.gcf()
+        
+        ax1 = fig.add_subplot(311)
+        strahl.viz.plot_diffusion(self.result)
+        ax1.set_ylim(ymin=0)
+        ax1.xaxis.label.set_visible(False)
+        ax1.label_outer()
+
+        ax2 = fig.add_subplot(312)
+        strahl.viz.plot_pinch(self.result)
+        ax2.axhline(y=0, color='black')
+        ax2.xaxis.label.set_visible(False)
+        ax2.label_outer()
+       
+        ax3 = fig.add_subplot(313)
+        ax3.plot(self.rho_pol, self.v/self.D, '-')
+        ax3.grid(True)
+        ax3.set_xlabel(ax2.get_xlabel())
+        ax3.set_ylabel('$v/D\ [\mathrm{1/m}]$')
+
+
+    def set_tau(self, tau=10e-3):
+        t, flx = strahl.rectangular_pulse_with_decay(length=5e-3,
+                max_value=5.0e18, tau=tau)
+        self.params['impurity.influx'] = (t, flx)
+
+
     D = property(get_D, set_D)
     rho_pol = property(get_rho_pol)
+    v = property(get_v)
+    tau = property(fset=set_tau)
 
 
 def plot_Dv(r, D, v):
