@@ -40,51 +40,48 @@ def set_xaxis_rho():
     else:
         raise NotImplementedError('%s grid'% radial_grid)
 
-
-
-def plot_overview(res):
-    shape_ = (4,4)
-
-    # first row
-    ax = plt.subplot2grid(shape_, (0,0), colspan=2)
+def plot_input(res):
+    f = plt.gcf()
+    ax = f.add_subplot(221)
     plot_electron_density(res)
-    ax = plt.subplot2grid(shape_, (0,2), colspan=2)
+
+    ax = f.add_subplot(222)
     plot_electron_temperature(res)
     ax.yaxis.set_label_position('right')
     ax.yaxis.set_ticks_position('right')
 
-    # second row
-    ax = plt.subplot2grid(shape_, (1,0), colspan=2)
+    ax = f.add_subplot(223)
     plot_influx_through_valve(res)
-    ax = plt.subplot2grid(shape_, (1,2), colspan=2)
+
+    ax = f.add_subplot(224)
     plot_volume(res)
     ax.yaxis.set_label_position('right')
     ax.yaxis.set_ticks_position('right')
 
-    # third row
-    ax = plt.subplot2grid(shape_, (2,0), colspan=2)
+
+def plot_output(res):
+    f = plt.gcf()
+    ax = f.add_subplot(221)
     plot_diffusion(res)
 
-    ax = plt.subplot2grid(shape_, (2,2), colspan=2)
-    plot_pinch(res)
+
+    ax = f.add_subplot(222)
+    plot_total_impurity_density(res)
+    decimate_plotted_lines()
     ax.yaxis.set_label_position('right')
     ax.yaxis.set_ticks_position('right')
 
-    # fourth row
-    ax = plt.subplot2grid(shape_, (3,0), colspan=2)
-    plot_total_impurity_density(res)
-    decimate_plotted_lines()
+    ax = f.add_subplot(223)
+    plot_advection_velocity(res)
 
-    ax = plt.subplot2grid(shape_, (3,2), colspan=2)
+    ax = f.add_subplot(224)
     plot_sxr(res)
     decimate_plotted_lines()
     ax.yaxis.set_label_position('right')
     ax.yaxis.set_ticks_position('right')
     yfmt = ax.yaxis.get_major_formatter()
     yfmt.set_powerlimits((-3,4))
-    #plt.subplots_adjust(left=0.07, right=0.93, top=0.93, bottom=0.07,
-    #        wspace=0.45, hspace=0.25)
- 
+
 
 def plot_background(res):
     plt.clf()
@@ -103,7 +100,7 @@ def plot_transport_profiles(res):
     plot_diffusion(res)
 
     plt.subplot(212)
-    plot_pinch(res)
+    plot_advection_velocity(res)
 
     plt.gcf().canvas.set_window_title('STRAHL: transport properties')
 
@@ -158,13 +155,13 @@ def plot_diffusion(res):
     ax.grid(True)
 
 
-def plot_pinch(res):
+def plot_advection_velocity(res):
     ax = plt.gca()
 
     r = radial_grid(res)
     pro = res['anomal_drift']
     ax.plot(r, res['anomal_drift'].mean(_ax['time']))
-    ax.set_ylabel(r'$V\ [\mathrm{m/s}]$')
+    ax.set_ylabel(r'$v\ [\mathrm{m/s}]$')
     ax.grid(True)
     set_xaxis_rho()
 
@@ -176,6 +173,7 @@ def plot_sxr(res):
     sxr = res['sxr_radiation']
     ax.plot(r, sxr[:,_ax['total_radiation'],:].T, '-')
     ax.set_ylabel(r'$E_\mathrm{SXR}\ [\mathrm{W/cm^3}]$')
+    ax.set_ylim(ymin=0)
     set_xaxis_rho()
 
     ax.grid(True)
@@ -191,6 +189,7 @@ def plot_total_impurity_density(res):
     ax.set_ylabel('$n_\mathrm{imp}\ [\mathrm{cm^{-3}}]$')
     set_xaxis_rho()
     ax.grid(True)
+    ax.set_ylim(ymin=0)
 
     for txt, line in zip(legend_from_time(res['time']), ax.lines):
         line.set_label(txt)
