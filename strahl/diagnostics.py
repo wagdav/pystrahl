@@ -1,9 +1,7 @@
 import numpy as np
-
 import matplotlib.pyplot as plt
 
-from strahl.geometry.chord import integrate_along_chord
-import crpppy.diagnostics.dmpx as tcv_dmpx
+from geometry.chord import integrate_along_chord
 
 def line_integrated_measurements(res, eq, chord):
     x, y, psi_norm = eq.get_psi_contours()
@@ -27,15 +25,6 @@ def line_integrated_measurements(res, eq, chord):
     chord_intensity = np.array(chord_intensity)
 
     return times, chord_intensity
-
-
-def measurement_chords():
-    return tcv_dmpx.geometry(42661)
-
-
-def plot_geometry():
-    chords = measurement_chords()
-    tcv_dmpx.plot_geometry(chords, clip=True)
 
 
 if __name__ == '__main__':
