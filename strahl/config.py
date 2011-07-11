@@ -112,7 +112,7 @@ class TestProfiles(BackgroundParameters):
         d = {}
 
         rho = np.linspace(0,1,20)
-        ne = 1e19 * (1 - rho**2) + 1e17
+        ne = 1e13 * (1 - rho**2) + 1e11
         Te = 1e3 * (1 - rho**2) + 10
 
         d['background.atomic_weight'] = 2
@@ -152,6 +152,7 @@ class CircularGeometry(Geometry):
         d['geometry.rho_volume_at_lcfs'] = self.rho_volume_at_lcfs * 100
         d['geometry.major_radius'] = 88
         d['geometry.rho_volume'] = np.linspace(0, 1, 20)
+        d['geometry.rho_volume'] *= d['geometry.rho_volume_at_lcfs']
         return d
 
 
