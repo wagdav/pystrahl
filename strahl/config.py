@@ -76,6 +76,15 @@ class ImpurityParameters(object):
         self.v = v(rho)
         self.influx = influx
 
+    def get_influx(self):
+        return self._influx
+
+    def set_influx(self, influx):
+        t, flx = influx
+        t, flx = np.asarray(t), np.asarray(flx)
+        assert t.shape == flx.shape, 'Invalid shape t.shape != flx.shape'
+        self._influx = (t, flx)
+
     def as_dict(self):
         d = {}
         d['impurity.element'] = self.element
@@ -99,6 +108,7 @@ class ImpurityParameters(object):
 
         return d
 
+    influx = property(get_influx, set_influx)
 
 class BackgroundParameters(object):
     def __init__(self, element, rho, ne, Te):
@@ -129,7 +139,7 @@ class BackgroundParameters(object):
     def as_dict(self):
         atomic_weights = dict(H=1, D=2)
         charges = dict(H=1, D=1)
-        rho, ne, Te = self.params
+        rho, ne, Te = self.profiles
 
         d = {}
         d['background.atomic_weight'] = atomic_weights[self.element]
