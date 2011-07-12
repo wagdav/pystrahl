@@ -101,27 +101,68 @@ class ImpurityParameters(object):
 
 
 class BackgroundParameters(object):
-    pass
+    def __init__(self, element, rho, ne, Te):
+        self.element = element
+        self.profiles = (rho, ne, Te)
+
+    def set_element(self, element):
+        if element not in ['H', 'D']:
+            raise NotImplementedError('%s element as background plasma is not'
+                'supported.' % element)
+        self._element = element
+
+    def get_element(self):
+        return self._element
+
+    def get_profiles(self):
+        """
+        Retrun (rho, ne, Te) tuple.
+        """
+        return self._profiles
+
+    def set_profiles(self, profiles):
+        rho, ne, Te = profiles
+        assert rho.shape == ne.shape, 'Incorrect shape rho.shape != ne.shape'
+        assert rho.shape == Te.shape, 'Incorrect shape rho.shape != Te.shape'
+        self._profiles = (rho, ne, Te)
+
+    def as_dict(self):
+        atomic_weights = dict(H=1, D=2)
+        charges = dict(H=1, D=1)
+        rho, ne, Te = self.params
+
+        d = {}
+        d['background.atomic_weight'] = atomic_weights[self.element]
+        d['background.charge'] = charges[self.element]
+        d['background.decay_length'] = 1 # FIXME: implicit parameter
+        d['background.rho_poloidal'] = rho
+        d['background.electron_density'] = ne
+        d['background.electron_temperature'] = Te
+
+        return d
+
+    element = property(get_element, set_element)
+    profiles = property(get_profiles, set_profiles)
 
 
 class TestProfiles(BackgroundParameters):
+    """
+    Deuterium plasma background with parabolic temperature and density
+    profiles.
+
+    >>> bg = TestProfiles()
+    >>> bg.element
+    'D'
+    >>> rho, ne, Te = bg.profiles
+    >>> rho.min(), rho.max(), rho.mean()
+    (0.0, 1.0, 0.5)
+    """
     def __init__(self):
-        pass
-
-    def as_dict(self):
-        d = {}
-
         rho = np.linspace(0,1,20)
         ne = 1e13 * (1 - rho**2) + 1e11
         Te = 1e3 * (1 - rho**2) + 10
+        super(TestProfiles, self).__init__('D', rho, ne, Te)
 
-        d['background.atomic_weight'] = 2
-        d['background.charge'] = 1
-        d['background.decay_length'] = 1
-        d['background.electron_temperature'] = Te
-        d['background.electron_density'] = ne
-        d['background.rho_poloidal'] = rho
-        return d
 
 class ThomsonProfilesfromShot(BackgroundParameters):
     def __init__(self, shot, time_bbox):
