@@ -63,18 +63,11 @@ class ImpurityParameters(object):
     """
     
     def __init__(self, element, influx, D, v):
-        if not element in ['Ar']:
-            raise NotImplementedError('Unknown element: %s')
-
-        atomic_weights = dict(Ar=18)
-
-        self.element = element
-        self.atomic_weight = atomic_weights[element]
-
         rho = np.linspace(0, 1, 20)
         self.D = D(rho)
         self.v = v(rho)
         self.influx = influx
+        self.element = element
 
     def get_influx(self):
         return self._influx
@@ -85,10 +78,23 @@ class ImpurityParameters(object):
         assert t.shape == flx.shape, 'Invalid shape t.shape != flx.shape'
         self._influx = (t, flx)
 
+    def get_element(self):
+        return self._element, self._atomic_weight
+
+    def set_element(self, element):
+        atomic_weights = dict(Ar=18)
+
+        if not element in atomic_weights.keys():
+            raise NotImplementedError('%s as impurity is not supported.'
+                    % element)
+        self._element = element
+        self._atomic_weight = atomic_weights[element]
+
     def as_dict(self):
         d = {}
-        d['impurity.element'] = self.element
-        d['impurity.atomic_weight'] = self.atomic_weight
+        element, atomic_weight = self.element
+        d['impurity.element'] = element
+        d['impurity.atomic_weight'] = atomic_weight
 
         # transport coefficients
         d['impurity.diffusion_coefficient'] = self.D
@@ -109,6 +115,7 @@ class ImpurityParameters(object):
         return d
 
     influx = property(get_influx, set_influx)
+    element = property(get_element, set_element)
 
 class BackgroundParameters(object):
     def __init__(self, element, rho, ne, Te):
@@ -117,8 +124,8 @@ class BackgroundParameters(object):
 
     def set_element(self, element):
         if element not in ['H', 'D']:
-            raise NotImplementedError('%s element as background plasma is not'
-                'supported.' % element)
+            raise NotImplementedError('%s as background plasma is not'
+                ' supported.' % element)
         self._element = element
 
     def get_element(self):
@@ -219,20 +226,21 @@ class STRAHLConfig(object):
         self.background = background
         self.geometry = geometry
 
-        self._render()
-
-    def _render(self):
+    def get_params(self):
         d = {}
         d.update(self.numerical.as_dict())
         d.update(self.impurity.as_dict())
         d.update(self.background.as_dict())
         d.update(self.geometry.as_dict())
-        self.params = d
 
         # FIXME add some global parameters
         d['index'] = 0
         d['save_all'] = True
         d['shot'] = 99999
+
+        return d
+
+    params = property(get_params)
 
 
 def read_config(filename):
