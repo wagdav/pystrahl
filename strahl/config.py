@@ -85,7 +85,7 @@ class ImpurityParameters(object):
         return self._element, self._atomic_weight
 
     def set_element(self, element):
-        atomic_weights = dict(Ar=18)
+        atomic_weights = dict(Ar=18, Ne=10, Si=14)
 
         if not element in atomic_weights.keys():
             raise NotImplementedError('%s as impurity is not supported.'
