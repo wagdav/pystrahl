@@ -14,6 +14,8 @@ def read_results(filename):
 
     out['large_radius'] = f.large_radius[0]
     out['small_radius'] = f.small_radius[0]
+    out['maximum_charge'] = f.maximum_charge[0]
+    out['element'] = f.species
 
     out['anomal_diffusion'] /= 1e4
     out['anomal_drift'] /= 1e2
