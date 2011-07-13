@@ -4,18 +4,39 @@ __all__ = [ 'NumericalParameters', 'ImpurityParameters',
 
 import numpy as np
 
+_mandatory_keys = {
+    'numerical' :
+        [ 'grid.k', 'grid.radial_points', 'internal_eps', 'time.dt',
+          'time.final', 'max_internal_steps', 'iteration_type' ],
+    'impurity' :
+        [ 'decay_length', 'delta_source', 'atomic_weight', 'divertor_puff',
+          'element', 'source_position', 'sol_width', 'energy_of_neutrals',
+          'parallel_loss_time', 'diffusion_coefficient',
+          'convection_velocity', 'influx' ],
+    'background' :
+        [ 'atomic_weight', 'charge', 'decay_length', 'rho_poloidal',
+          'electron_density', 'electron_temperature' ],
+    'geometry' :
+        ['rho_volume_at_lcfs', 'major_radius', 'rho_volume' ]
+}
+
+
+def _has_all_mandatory_keys(d, section):
+    assert (set(d.as_dict().keys()) == _set_of_mandatory_keys(section)),\
+        '%s section contains wrong keys.' % section
+
+
+def _set_of_mandatory_keys(section):
+    keys_needed = []
+    for key in _mandatory_keys[section]:
+        keys_needed.append('.'.join((section, key)))
+    return set(keys_needed)
+
+
 class NumericalParameters(object):
     """
     >>> numpar = NumericalParameters(timeFinal=5, grid_k=10, timeStep=0.02)
-    >>> p = numpar.as_dict()
-
-    >>> assert p.has_key('numerical.grid.k')
-    >>> assert p.has_key('numerical.grid.radial_points')
-    >>> assert p.has_key('numerical.internal_eps')
-    >>> assert p.has_key('numerical.time.dt')
-    >>> assert p.has_key('numerical.time.final')
-    >>> assert p.has_key('numerical.max_internal_steps')
-    >>> assert p.has_key('numerical.iteration_type')
+    >>> _has_all_mandatory_keys(numpar, 'numerical')
     """
     def __init__(self, timeStep, timeFinal, grid_k=10, eps=0.02,
             radial_points=101, max_internal_steps=100):
@@ -42,26 +63,8 @@ class ImpurityParameters(object):
     >>> D = constant(0.1)
     >>> v = constant(-1)
     >>> imp = ImpurityParameters(element='Ar', influx=influx, D=D, v=v)
-    >>> p = imp.as_dict()
-
-    >>> assert p.has_key('impurity.decay_length')
-    >>> assert p.has_key('impurity.delta_source')
-    >>> assert p.has_key('impurity.atomic_weight')
-    >>> assert p.has_key('impurity.divertor_puff')
-    >>> assert p.has_key('impurity.element')
-    >>> assert p.has_key('impurity.source_position')
-    >>> assert p.has_key('impurity.sol_width')
-    >>> assert p.has_key('impurity.energy_of_neutrals')
-    >>> assert p.has_key('impurity.parallel_loss_time')
-
-    Transport parameters
-    >>> assert p.has_key('impurity.diffusion_coefficient')
-    >>> assert p.has_key('impurity.convection_velocity')
-
-    Influx time trace
-    >>> assert p.has_key('impurity.influx')
+    >>> _has_all_mandatory_keys(imp, 'impurity')
     """
-    
     def __init__(self, element, influx, D, v):
         rho = np.linspace(0, 1, 20)
         self.D = D(rho)
@@ -117,6 +120,7 @@ class ImpurityParameters(object):
     influx = property(get_influx, set_influx)
     element = property(get_element, set_element)
 
+
 class BackgroundParameters(object):
     def __init__(self, element, rho, ne, Te):
         self.element = element
@@ -168,6 +172,7 @@ class TestProfiles(BackgroundParameters):
     profiles.
 
     >>> bg = TestProfiles()
+    >>> _has_all_mandatory_keys(bg, 'background')
     >>> bg.element
     'D'
     >>> rho, ne, Te = bg.profiles
@@ -197,18 +202,25 @@ class EquilibriumfromShot(object):
     pass
 
 
-class Geometry(object):
+class GeometryParameters(object):
     pass
 
 
-class CircularGeometry(Geometry):
-    def __init__(self, radius=0.22):
-        self.rho_volume_at_lcfs = radius
+class CircularGeometry(GeometryParameters):
+    """
+    Circular plasma with a given minor and major radius (both in meters).
+
+    >>> geom = CircularGeometry(minor_radius=0.22, major_radius=0.88)
+    >>> _has_all_mandatory_keys(geom, 'geometry')
+    """
+    def __init__(self, minor_radius, major_radius):
+        self._minor_radius = minor_radius
+        self._major_radius = major_radius
 
     def as_dict(self):
         d = {}
-        d['geometry.rho_volume_at_lcfs'] = self.rho_volume_at_lcfs * 100
-        d['geometry.major_radius'] = 88
+        d['geometry.rho_volume_at_lcfs'] = self._minor_radius * 1e2
+        d['geometry.major_radius'] = self._major_radius * 1e2
         d['geometry.rho_volume'] = np.linspace(0, 1, 20)
         d['geometry.rho_volume'] *= d['geometry.rho_volume_at_lcfs']
         return d
@@ -219,7 +231,7 @@ class STRAHLConfig(object):
         assert isinstance(numerical, NumericalParameters)
         assert isinstance(impurity, ImpurityParameters)
         assert isinstance(background, BackgroundParameters)
-        assert isinstance(geometry, Geometry)
+        assert isinstance(geometry, GeometryParameters)
 
         self.numerical = numerical
         self.impurity = impurity
