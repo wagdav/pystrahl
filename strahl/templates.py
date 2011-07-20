@@ -13,7 +13,7 @@ cv    shot      index
 
 GRID POINTS AND ITERATION
 cv     rho = r**K (->K)      number of grid points, dr_center(cm), dr_edge(cm)
- %(numerical.grid.k)f %(numerical.grid.radial_points)d 0.1 0.05
+ %(numerical.grid.k)f %(numerical.grid.radial_points)d 2.0 0.1
 
    max. iterations     stop iteration       1=iteration,2=no iteration
 cv at fixed time      if change below(%%)  ion/rec-step
@@ -61,7 +61,7 @@ cv    Rec.:ON=1/OFF=0   wall-rec.  Tau-div->SOL(ms)   Tau-pump(ms)
 
                                                Connection lenghts [m]      Mach #
 cv    r_bound-r_lcfs (cm)  r_lim-r_lcfs(cm)   to divertor   to limiter    SOL Flow         
-          8.0 	               6.5                25.           0.5        0.05
+%(geometry.sol_width)f %(geometry.limiter_position)f 25. 0.5 0.05
 
 cv  additional sheath voltage
 0

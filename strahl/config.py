@@ -17,7 +17,8 @@ _mandatory_keys = {
         [ 'atomic_weight', 'charge', 'decay_length', 'rho_poloidal',
           'electron_density', 'electron_temperature' ],
     'geometry' :
-        ['rho_volume_at_lcfs', 'major_radius', 'rho_volume' ]
+        ['rho_volume_at_lcfs', 'major_radius', 'rho_volume', 'sol_width',
+            'limiter_position' ]
 }
 
 
@@ -223,6 +224,8 @@ class CircularGeometry(GeometryParameters):
         d['geometry.major_radius'] = self._major_radius * 1e2
         d['geometry.rho_volume'] = np.linspace(0, 1, 20)
         d['geometry.rho_volume'] *= d['geometry.rho_volume_at_lcfs']
+        d['geometry.sol_width'] = 1
+        d['geometry.limiter_position'] = 1
         return d
 
 

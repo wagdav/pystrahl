@@ -53,6 +53,8 @@ _defaultParams = {
     'geometry.rho_volume_at_lcfs' : 20.0,
     'geometry.major_radius' : 88.0,
     'geometry.rho_volume' : _r,
+    'geometry.sol_width' : 8.0,
+    'geometry.limiter_position' : 6.5,
 
     # plasma background
     'background.rho_poloidal' : _r,
