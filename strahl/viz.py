@@ -97,14 +97,14 @@ def plot_background(res):
 
 
 def plot_transport_profiles(res):
-    plt.clf()
-    plt.subplot(211)
+    f = plt.gcf()
+    ax = f.add_subplot(211)
     plot_diffusion(res)
 
-    plt.subplot(212)
+    ax = f.add_subplot(212)
     plot_advection_velocity(res)
 
-    plt.gcf().canvas.set_window_title('STRAHL: transport properties')
+    f.canvas.set_window_title('STRAHL: transport properties')
 
 
 def plot_impurity(res):
@@ -130,8 +130,6 @@ def plot_electron_density(res):
     ax.set_ylabel('$n_\mathrm{e}\ \mathrm{[cm^{-3}]}$')
     set_xaxis_rho()
 
-    ax.grid(True)
-
 
 def plot_electron_temperature(res):
     ax = plt.gca()
@@ -143,8 +141,6 @@ def plot_electron_temperature(res):
     ax.set_ylabel('$T_\mathrm{e}\ \mathrm{[eV]}$')
     set_xaxis_rho()
 
-    ax.grid(True)
-
 
 def plot_diffusion(res):
     ax = plt.gca()
@@ -154,8 +150,6 @@ def plot_diffusion(res):
     ax.set_ylabel(r'$D\ [\mathrm{m^2/s}]$')
     set_xaxis_rho()
 
-    ax.grid(True)
-
 
 def plot_advection_velocity(res):
     ax = plt.gca()
@@ -164,7 +158,6 @@ def plot_advection_velocity(res):
     pro = res['anomal_drift']
     ax.plot(r, res['anomal_drift'].mean(_ax['time']))
     ax.set_ylabel(r'$v\ [\mathrm{m/s}]$')
-    ax.grid(True)
     set_xaxis_rho()
 
 
@@ -177,8 +170,6 @@ def plot_sxr(res):
     ax.set_ylabel(r'$E_\mathrm{SXR}\ [\mathrm{W/cm^3}]$')
     ax.set_ylim(ymin=0)
     set_xaxis_rho()
-
-    ax.grid(True)
 
 
 def plot_total_impurity_density(res):
@@ -204,7 +195,6 @@ def plot_influx_through_valve(res):
 
     ax.set_xlabel('$t\ [\mathrm{s}$]')
     ax.set_ylabel('$\Gamma_\mathrm{valve}\ [\mathrm{cm^{-1}s^{-1}}]$')
-    ax.grid(True)
 
 
 def plot_volume(res):
@@ -219,7 +209,6 @@ def plot_volume(res):
     ax.plot(r, volume)
 
     set_xaxis_rho()
-    ax.grid(True)
     ax.set_ylabel('$V\ [\mathrm{m^3}]$')
 
 
