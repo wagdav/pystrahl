@@ -54,6 +54,82 @@ def geometry(rc):
     return out
 
 
+def geometry2(rc):
+    rhopol =  rc['background.rho_poloidal']
+
+    r0 = rc['geometry.major_radius'] / 100.
+    return strahlgrid_circular(rhopol, r0)
+
+
+import subprocess
+import inspect, os
+def strahlgrid_circular(rho, r0=0.88, z0=0.23, uloop=0., bt0=1.44):
+    """
+    Writes circular geometry parameters to 'starhlgrid.in' then calls
+    the fortran code strahlgrid.
+
+    strahlgrid.in => [strahlgrid] => output_file
+    """
+    NANGLE = 103
+    shot = 99999
+    time = 0
+    #r0, z0, uloop = 0.88, 0.23, 0.
+    #bt0 = 1.44
+
+    nr = np.alen(rho)
+    nsep = nr
+
+    a = 0.22 * rho
+    rmaj_in = r0 - a
+    rmaj_out = r0 + a
+
+    theta = np.linspace(0, 2*np.pi, NANGLE)
+    amin = 0.22 * np.linspace(0, 1, nsep)
+    theta, amin = np.meshgrid(theta,amin)
+    r = r0 + amin * np.cos(theta)
+    z = z0 + amin * np.sin(theta)
+    eps = amin / r0
+
+    q0, qedge = 1, 6.
+    q = (qedge - q0) * rho[:,None]**2 + q0
+    bt = bt0 / (1 + eps * np.cos(theta)) # toroidal field
+
+    bp0 = bt0 * eps / (q * np.sqrt(1-eps**2))
+    bp = bp0 / (1 + eps * np.cos(theta)) # poloidal field
+
+    def a2s(a):
+        txt = ' '.join('%1.3f' % i for i in a)
+        txt += '\n'
+        return txt
+
+    print 'Writing strahlgrid.in'
+    f = open('strahlgrid.in', 'w')
+    f.write('%s\n' % shot)
+    f.write('%s\n' % time)
+    f.write('%s %s %s\n' % (r0, z0, uloop))
+    f.write('%s %s\n' % (nr, nsep))
+    f.write(a2s(rho))
+    f.write(a2s(rmaj_in))
+    f.write(a2s(rmaj_out))
+    f.write(a2s(r.ravel('F')))
+    f.write(a2s(z.ravel('F')))
+    f.write(a2s(bp.ravel('F')))
+    f.write(a2s(bt.ravel('F')))
+    f.close()
+
+    curdir = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    dir_ = os.path.join(curdir, '..')
+    strahlgrid = os.path.join(dir_, 'strahlgrid')
+    if not os.path.isfile(strahlgrid):
+        raise IOError('strahlgrid is not found in %s '
+            'Have you compiled it?' % dir_)
+
+    p = subprocess.Popen(strahlgrid, stdout=subprocess.PIPE)
+    output, error = p.communicate()
+
+    return output
+
+
 def main_parameter_file(rc):
     """
     >>> from parameters import defaultParams
