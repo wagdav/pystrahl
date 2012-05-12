@@ -192,12 +192,12 @@ def transport_properties(rc):
     >>> r = [0, 1, 2, 3, 4, 5]
     >>> D = [1, 2, 3, 4, 5, 6]
     >>> v = [1, 2, 3, 4, 5, 6]
-    >>> rc = {  'background.rho_poloidal' : r,
+    >>> rc = {  'impurity.rho_poloidal' : r,
     ...         'impurity.diffusion_coefficient' : D,
     ...         'impurity.convection_velocity' : v}
     >>> o = transport_properties(rc)
     """
-    r = rc['background.rho_poloidal']
+    r = rc['impurity.rho_poloidal']
     D = rc['impurity.diffusion_coefficient']
     v = rc['impurity.convection_velocity']
 

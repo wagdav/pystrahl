@@ -68,6 +68,7 @@ _defaultParams = {
     'impurity.element' : 'Ar',
     'impurity.atomic_weight' : 18,
     'impurity.energy_of_neutrals' : 1.0,
+    'impurity.rho_poloidal' : _r,
     'impurity.diffusion_coefficient' : _r**2 + 0.01,
     'impurity.convection_velocity' : np.zeros_like(_r),
     'impurity.influx' : ([1.0], [2.51e21]),
@@ -78,6 +79,19 @@ _defaultParams = {
     'impurity.sol_width' : 1.0,
     'impurity.decay_length' : .5,
     'impurity.parallel_loss_time' : 2.5,
+
+    # recycling
+    'recycling.switch' : False,
+    'recycling.wall_R' : 1,
+    'recycling.tau_divsol' : 1e9,
+    'recycling.tau_pump' : 1e9,
+
+    # neoclassical transport
+    'neoclassical.on' : False,
+    'neoclassical.type' : 3,
+    'neoclassical.no_bp_contrib' : False,
+    'neoclassical.high_limit' : 1.,
+    'neoclassical.low_limit' : 0,
 
     # numerical parameters
     'numerical.grid.k' : 2,
@@ -100,5 +114,7 @@ def defaultParams():
 
 
 def sanity_check(params):
-    assert set(_defaultParams.keys()) == set(params.keys()),\
-        'Parameter set contains an invalid parameter name.'
+    a = set(_defaultParams.keys())
+    b = set(params.keys())
+    assert a == b, 'Parameter set contains an invalid parameter name: %s' %\
+    (b - a,)

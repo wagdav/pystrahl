@@ -3,6 +3,7 @@ __all__ = [ 'NumericalParameters', 'ImpurityParameters',
             'EquilibriumfromShot', 'TestProfiles', 'CircularGeometry']
 
 import numpy as np
+import periodictable
 
 _mandatory_keys = {
     'numerical' :
@@ -12,7 +13,7 @@ _mandatory_keys = {
         [ 'decay_length', 'delta_source', 'atomic_weight', 'divertor_puff',
           'element', 'source_position', 'sol_width', 'energy_of_neutrals',
           'parallel_loss_time', 'diffusion_coefficient',
-          'convection_velocity', 'influx' ],
+          'convection_velocity', 'influx', 'rho_poloidal'],
     'background' :
         [ 'atomic_weight', 'charge', 'decay_length', 'rho_poloidal',
           'electron_density', 'electron_temperature' ],
@@ -58,7 +59,7 @@ class NumericalParameters(object):
 
 class ImpurityParameters(object):
     """
-    >>> from strahl.misc import *
+    >>> from misc import *
 
     >>> influx = rectangular_pulse(5e-3, 5e21)
     >>> D = constant(0.1)
@@ -66,12 +67,15 @@ class ImpurityParameters(object):
     >>> imp = ImpurityParameters(element='Ar', influx=influx, D=D, v=v)
     >>> _has_all_mandatory_keys(imp, 'impurity')
     """
-    def __init__(self, element, influx, D, v):
-        rho = np.linspace(0, 1, 20)
-        self.D = D(rho)
-        self.v = v(rho)
+    def __init__(self, element, influx, D, v, energy_of_neutrals=1.):
+        self.rho = np.linspace(0, 1, 20)
+        self.D = D(self.rho)
+        self.v = v(self.rho)
         self.influx = influx
         self.element = element
+        self.energy_of_neutrals = 1.
+
+        self.set_recycling(R=0)
 
     def get_influx(self):
         return self._influx
@@ -86,37 +90,62 @@ class ImpurityParameters(object):
         return self._element, self._atomic_weight
 
     def set_element(self, element):
-        atomic_weights = dict(Ar=18, Ne=10, Si=14)
+        isotope = periodictable.elements.isotope(element)
+        self._element = isotope.symbol
+        self._atomic_weight = isotope.mass
 
-        if not element in atomic_weights.keys():
-            raise NotImplementedError('%s as impurity is not supported.'
-                    % element)
-        self._element = element
-        self._atomic_weight = atomic_weights[element]
+    def set_recycling(self, R, divsol=1e9, pump=1e9):
+        self.recycling_switch = bool(R)
+        self.recycling_R = R
+        self.recycling_divsol = divsol
+        self.recycling_pump = pump
+
+    def set_transport_profiles(self, rho, D, v):
+        self.rho = rho
+        self.D = D
+        self.v = v
 
     def as_dict(self):
         d = {}
         element, atomic_weight = self.element
-        d['impurity.element'] = element
+        d['impurity.element'] = self._pad_with_underscore(element)
         d['impurity.atomic_weight'] = atomic_weight
 
         # transport coefficients
         d['impurity.diffusion_coefficient'] = self.D
         d['impurity.convection_velocity'] = self.v
+        d['impurity.rho_poloidal'] = self.rho
 
         # impurity influx
         d['impurity.influx'] = self.influx
 
+        d['impurity.energy_of_neutrals'] = self.energy_of_neutrals
+
+        # recyling
+        d['recycling.switch'] = self.recycling_switch
+        d['recycling.wall_R'] = self.recycling_R
+        d['recycling.tau_divsol'] = self.recycling_divsol
+        d['recycling.tau_pump'] = self.recycling_pump
+
         # FIXME some hardwired values
-        d['impurity.energy_of_neutrals'] = 1.0
         d['impurity.parallel_loss_time'] = 2.5
         d['impurity.sol_width'] = 1.0
-        d['impurity.source_position'] = 1000
+        d['impurity.source_position'] = 6
         d['impurity.divertor_puff'] = False
         d['impurity.delta_source'] = 0
+        #d['impurity.decay_length'] = 1000
         d['impurity.decay_length'] = 0.5
 
         return d
+
+    def _pad_with_underscore(self, name):
+        if len(name) == 2:
+            ret = name
+        elif len(name) == 1:
+            ret = name + '_'
+        else:
+            raise ValueError('invalid element symbol %s' % name)
+        return ret
 
     influx = property(get_influx, set_influx)
     element = property(get_element, set_element)
@@ -181,9 +210,10 @@ class TestProfiles(BackgroundParameters):
     (0.0, 1.0, 0.5)
     """
     def __init__(self):
-        rho = np.linspace(0,1,20)
-        ne = 1e13 * (1 - rho**2) + 1e11
-        Te = 1e3 * (1 - rho**2) + 10
+        rho = np.linspace(0, 1.0, 20)
+        r = rho / rho.max()
+        ne = 3e13 * (1 - r**2) + 0.5e13
+        Te = 1e3 * (1 - r**2) + 150
         super(TestProfiles, self).__init__('D', rho, ne, Te)
 
 
@@ -229,8 +259,41 @@ class CircularGeometry(GeometryParameters):
         return d
 
 
+class NeoclassicalTransport(object):
+    def __init__(self, type_='off', limits=(0., 1.)):
+        self.eta = 0
+        self.set_type(type_)
+        self.limits = limits
+
+    def set_type(self, p, eta=100):
+        type_ = 3
+        if p in ['one stage']:
+            type_ = 2
+        elif p in ['all stages', 'on']:
+            type_ = 3
+        elif p in ['off']:
+            eta = 0
+        else:
+            raise ValueError('unknown method for neoclassical transport: %s' %
+                    p)
+
+        self.type_ = type_
+        self.eta = eta
+
+    def as_dict(self):
+        d = {}
+        d['neoclassical.on'] = self.eta
+        d['neoclassical.type'] = self.type_
+        d['neoclassical.no_bp_contrib'] = 0
+        d['neoclassical.high_limit'] = self.limits[1]
+        d['neoclassical.low_limit'] = self.limits[0]
+
+        return d
+
+
 class STRAHLConfig(object):
-    def __init__(self, numerical, impurity, background, geometry):
+    def __init__(self, numerical, impurity, background, geometry,
+            neoclassical=None):
         assert isinstance(numerical, NumericalParameters)
         assert isinstance(impurity, ImpurityParameters)
         assert isinstance(background, BackgroundParameters)
@@ -241,12 +304,18 @@ class STRAHLConfig(object):
         self.background = background
         self.geometry = geometry
 
+        if neoclassical == None:
+            self.neoclassical = NeoclassicalTransport()
+        else:
+            self.neoclassical = neoclassical
+
     def get_params(self):
         d = {}
         d.update(self.numerical.as_dict())
         d.update(self.impurity.as_dict())
         d.update(self.background.as_dict())
         d.update(self.geometry.as_dict())
+        d.update(self.neoclassical.as_dict())
 
         # FIXME add some global parameters
         d['index'] = 0

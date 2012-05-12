@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import strahl
-from strahl.diagnostics import dmpx
 from crpppy.tcv_geom import vessel_patch
 import crpppy.diagnostics.dmpx as tcv_dmpx
 import crpppy.diagnostics.thomson as thomson
@@ -23,28 +22,20 @@ def get_rho_volume(eq):
     return rho_vol, rho_vol_LCFS
 
 
-def plot_geometry():
-    f = plt.figure()
-    ax = f.add_subplot(111)
-    ax.add_patch(vessel_patch())
-    dmpx.plot_geometry()
-    eq.plot()
-    plt.draw()
-
-
 def syntetic_chords(strahl_result, equilibrim, chord_indices):
     res = {}
-    chords = dmpx.measurement_chords()
+    chords = tcv_dmpx.geometry(42314)
     for ci in chord_indices:
         chord = chords[ci]
-        time, profile = dmpx.line_integrated_measurements(strahl_result,
+        time, profile = \
+        strahl.diagnostics.line_integrated_measurements(strahl_result,
                 equilibrim, chord)
         res[ci] = profile
     return time, res
 
 
-def plot_chord_evolution(measured, simulated,
-        chord_indices=[31], time_offset=0.0, plot_measured=True):
+def plot_chord_evolution(measured, simulated, chord_indices=[31],
+        time_offset=0.0, plot_measured=True):
     t, yy = simulated
     time_offset += measured.time[0]
     scaling_factor = measured.central_max() / yy[31].max()
@@ -68,10 +59,15 @@ def plot_chord_evolution(measured, simulated,
 
 
 class DMPX_data(object):
-    def __init__(self, time, data):
+    def __init__(self, time, data, chords):
         self.time = time
         self.data = data
-        if data.shape[1] != np.alen(time):
+        self.chords = chords
+        
+        self._check_if_shape_consistent()
+
+    def _check_if_shape_consistent(self):
+        if self.data.shape[1] != np.alen(self.time):
             print self.time.shape, self.data.shape
             raise AssertionError('Size mismatch')
 
@@ -90,26 +86,44 @@ class DMPX_data(object):
         time_mask = (begin <= self.time) & (self.time < end)
         new_time = self.time[time_mask]
         new_data = self.data[:, time_mask]
-        return type(self)(new_time, new_data)
+        return type(self)(new_time, new_data, self.chords)
 
     def remove_offset(self, begin, end):
         offset = self.select_time(begin, end)
         offset = offset.data.mean(axis=1)
         new_data = self.data - offset[:,np.newaxis]
-        return type(self)(self.time, new_data)
+        return type(self)(self.time, new_data, self.chords)
 
-    def plot(self):
+    def viz(self):
+        return DMPX_Visualiser(self)
+
+
+class DMPX_Visualiser(object):
+    def __init__(self, dmpx_data):
+        self.d = dmpx_data
+
+    def plot_chord_evolution(self, chord_indices):
         ax = plt.gca()
-        ax.plot(self.time, self.data.T)
+        lines = []
+        for c in chord_indices:
+            label = str(c)
+            t = self.d.time
+            y = self.d.data[c]
+
+            line, = ax.plot(t, y, lw=0.5, label=label)
+            lines.append(line)
+        ax.set_xlabel(r'$t\ [\mathrm{s}]$')
+        return lines
 
 
 def dmpx_from_shot(shot):
     time, data = tcv_dmpx.get_data(shot)
-    return DMPX_data(time, data)
+    chords = tcv_dmpx.geometry(shot)
+    return DMPX_data(time, data, chords)
 
 
 class StrahlSimulation(object):
-    def __init__(self, equilibrium, dmpx_data, thomson_data, inversion=None):
+    def __init__(self, equilibrium, dmpx_data, thomson_data, inversion):
         self.equilibrium = equilibrium
         self.dmpx_data = dmpx_data
         self.thomson_data = thomson_data
@@ -184,7 +198,7 @@ class StrahlSimulation(object):
         plt.draw()
 
     def plot_overview(self):
-        strahl.viz.plot_overview(self.result)
+        strahl.viz.plot_output(self.result)
 
     def plot_syntetic_chords(self, plot_measured=True, time_offset=0):
         strahl_result = self.result
@@ -349,9 +363,13 @@ db = {
 }
 
 try:
-    sim
+    lo_ip
 except NameError:
     lo_ip = simulation_from_shot(42314)
     hi_ip = simulation_from_shot(42313)
+
+
+d = lo_ip.dmpx_data
+dv = d.viz()
 
 plt.show()

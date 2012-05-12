@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import crpppy.mds as mds
+from crpp.mds import TCV_Connection
 
 class Equilibrium(object):
     """
@@ -111,7 +111,7 @@ class LiuqeEquilibrium(Equilibrium):
     >>> eq.plot()
     """
     def __init__(self, shot, time):
-        conn = mds.TCV_Connection(shot)
+        conn = TCV_Connection(shot)
         rho = conn.get(r'dim_of(\results::psitbx:vol)')
         vol = conn.get(r'\results::psitbx:vol[*,$1]', time)
 

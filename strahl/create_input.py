@@ -1,15 +1,26 @@
 import os
+import shutil
 
 import datablocks
 import parameters
-from viz import read_results
+import io
 
-def run(rc, working_directory):
-    create_input(rc, working_directory)
+def run(rc, out=None, wk='./wk'):
+    """
+    rc : dict
+        Input parameters for STRAHL.
+    out : str
+        Name of the output file.
+    wk : str
+        Working directory of STRAHL.
+    """
+    create_input(rc, wk)
 
-    _go_to_wk_and_run(rc, working_directory)
-    of = output_filename(rc, working_directory)
-    return read_results(of)
+    _go_to_wk_and_run(rc, wk)
+    of = output_filename(rc, wk)
+    if out != None:
+        shutil.copyfile(of, out)
+    return io.load(of)
 
 
 def _go_to_wk_and_run(rc, working_directory):

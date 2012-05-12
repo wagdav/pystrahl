@@ -13,7 +13,7 @@ cv    shot      index
 
 GRID POINTS AND ITERATION
 cv     rho = r**K (->K)      number of grid points, dr_center(cm), dr_edge(cm)
- %(numerical.grid.k)f %(numerical.grid.radial_points)d 2.0 0.1
+ %(numerical.grid.k)f %(numerical.grid.radial_points)d 0.5 0.02
 
    max. iterations     stop iteration       1=iteration,2=no iteration
 cv at fixed time      if change below(%%)  ion/rec-step
@@ -57,7 +57,7 @@ cv    decay length of impurity outside last grid point(cm)
  %(impurity.decay_length)f
 
 cv    Rec.:ON=1/OFF=0   wall-rec.  Tau-div->SOL(ms)   Tau-pump(ms)
- 0 -1 -1 -1
+%(recycling.switch)d %(recycling.wall_R)f %(recycling.tau_divsol)f %(recycling.tau_pump)f
 
                                                Connection lenghts [m]      Mach #
 cv    r_bound-r_lcfs (cm)  r_lim-r_lcfs(cm)   to divertor   to limiter    SOL Flow         
@@ -74,8 +74,7 @@ cv    take from file with:    shot        index
 NEOCLASSICAL TRANSPORT
 method 0 = off,  >0 = %% of Drift,    1 = approx.
 cv  <0 =figure out, but dont use   2/3 = NEOART   neoclassics for rho_pol <
-  0 3 1 1.06 0.96
-
+%(neoclassical.on)d %(neoclassical.type)d %(neoclassical.no_bp_contrib)d %(neoclassical.high_limit)f %(neoclassical.low_limit)f
 
 ANOMALOUS  TRANSPORT
 cv    # of changes for transport
@@ -101,7 +100,7 @@ cv time vector
   %(time_vector)s
 
 cv ne function
-  'interpa'
+  'interp'
 
 cv radial coordinate
   'poloidal rho'
@@ -114,6 +113,9 @@ cv radial grid for interpolation
 
 cv ne[cm^-3]/ Te[eV] / Ti [eV]
   %(ygrid)s
+
+cv decay length in rhovol [cm]
+ 0.5
 """
 
 

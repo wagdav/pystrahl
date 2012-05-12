@@ -3,7 +3,7 @@ __all__ = []
 from create_input import create_input, run
 from misc import *
 from parameters import defaultParams
-
+from io import load, Result
 import viz
 
 from equilibrium import MockUpEquilibrium, LiuqeEquilibrium

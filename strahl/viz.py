@@ -1,26 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from scipy.io import netcdf_file
 
 _ax = dict(time=0, total_radiation=-1)
-
-def read_results(filename):
-    f = netcdf_file(filename, 'r')
-    variables = f.variables
-    out = {}
-    for variableName, variable in variables.iteritems():
-        out[variableName] = np.array(variable)
-
-    out['large_radius'] = f.large_radius[0]
-    out['small_radius'] = f.small_radius[0]
-    out['maximum_charge'] = f.maximum_charge[0]
-    out['element'] = f.species
-
-    out['anomal_diffusion'] /= 1e4
-    out['anomal_drift'] /= 1e2
-    return out
-
 
 radial_coordinate = 'rho_poloidal'
 
@@ -151,6 +133,17 @@ def plot_diffusion(res):
     set_xaxis_rho()
 
 
+def plot_neoclassical_diffusion(res):
+    ax = plt.gca()
+
+    r = radial_grid(res)
+    ax.plot(r, res['classical_diff_coeff_main'][-1])
+    ax.plot(r, res['pfirsch_schlueter_diff_coeff_main'][-1])
+    ax.plot(r, res['banana_plateau_diff_coeff_main'][-1])
+    ax.set_ylabel(r'$D\ [\mathrm{m^2/s}]$')
+    set_xaxis_rho()
+
+
 def plot_advection_velocity(res):
     ax = plt.gca()
 
@@ -228,7 +221,8 @@ def legend_from_time(time_vector):
 
 if __name__ == '__main__':
     of = '/home/dwagner/work/strahl/result/strahl_result.dat'
-    res = read_results(of)
+    import io
+    res = io.load(of)
 
     plt.figure(1); plt.clf()
     plot_overview(res)
