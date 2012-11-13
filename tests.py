@@ -12,7 +12,8 @@ def test_sanity_check():
     assert_raises(AssertionError, strahl.sanity_check, p)
 
 
-from strahl.datablocks import plasma_background, geometry, main_parameter_file
+from strahl.input_datablocks import plasma_background, geometry, \
+    main_parameter_file
 def test_datablocks():
     p = strahl.default_params()
 
@@ -21,7 +22,7 @@ def test_datablocks():
     main_parameter_file(p)
 
 
-from strahl.create_input import input_directory_names, input_file_names
+from strahl.input import input_directory_names, input_file_names
 def test_create_input():
     o = input_directory_names('xxx')
     assert_equal(o['nete'], 'xxx/nete')

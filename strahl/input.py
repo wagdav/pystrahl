@@ -1,7 +1,7 @@
 import os
 import shutil
 
-import datablocks
+import input_datablocks as datablocks
 import result
 
 def run(rc, out=None, wk='./wk'):

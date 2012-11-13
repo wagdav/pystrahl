@@ -1,6 +1,6 @@
 import numpy as np
 
-import templates
+import input_templates
 
 
 def plasma_background(rc):
@@ -37,7 +37,7 @@ def geometry(rc):
     geom['geometry.rho_volume_at_lcfs'] = rc['geometry.rho_volume_at_lcfs']
     geom['geometry.major_radius'] = rc['geometry.major_radius']
 
-    out = templates.geometry % geom
+    out = input_templates.geometry % geom
 
     dummy = array2text(np.zeros(geom['n_sep']))
     dummy = '\ncv\n%s\n' % dummy
@@ -127,7 +127,7 @@ def main_parameter_file(rc):
     p['transport_datablock'] = transport_properties(rc)
     p.update(rc)
 
-    return templates.param_file % p
+    return input_templates.param_file % p
 
 
 def plasma_profile(x, y, decay_length):
@@ -172,7 +172,7 @@ def plasma_profile(x, y, decay_length):
     dd=dict(ntimes=ntimes, time_vector=time_vector, npoints=npoints,
             rgrid=rgrid, ygrid=ygrid, decay_length=decay_length)
 
-    return templates.pp_datablock % dd
+    return input_templates.pp_datablock % dd
 
 
 def transport_properties(rc):
@@ -195,9 +195,9 @@ def transport_properties(rc):
     v = array2text(v)
 
     o = ''
-    o += templates.transport_datablock % dict(n_points=n_points, x=x, y=D,
+    o += input_templates.transport_datablock % dict(n_points=n_points, x=x, y=D,
             drift='')
-    o += templates.transport_datablock % dict(n_points=n_points, x=x, y=v,
+    o += input_templates.transport_datablock % dict(n_points=n_points, x=x, y=v,
             drift="'velocity'")
 
     #o += "cv\n const_c 'parameter'"

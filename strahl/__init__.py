@@ -1,6 +1,6 @@
 __all__ = []
 
-from create_input import create_input, run
+from input import create_input, run
 from misc import *
 from result import load
 
