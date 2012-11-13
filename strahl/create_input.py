@@ -2,8 +2,7 @@ import os
 import shutil
 
 import datablocks
-import parameters
-import io
+import result
 
 def run(rc, out=None, wk='./wk'):
     """
@@ -20,7 +19,7 @@ def run(rc, out=None, wk='./wk'):
     of = output_filename(rc, wk)
     if out != None:
         shutil.copyfile(of, out)
-    return io.load(of)
+    return result.load(of)
 
 
 def _go_to_wk_and_run(rc, working_directory):

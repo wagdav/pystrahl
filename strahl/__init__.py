@@ -2,7 +2,7 @@ __all__ = []
 
 from create_input import create_input, run
 from misc import *
-from io import load, Result
+from result import load
 import viz
 
 from equilibrium import MockUpEquilibrium, LiuqeEquilibrium
