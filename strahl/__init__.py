@@ -75,11 +75,12 @@ def default_params():
     }
 
 
+defaultParams = default_params
+
+
 def sanity_check(params):
     a = set(default_params().keys())
     b = set(params.keys())
     assert a == b, \
         'Parameter set contains an invalid parameter name: %s' %\
         (b - a,)
-
-defaultParams = default_params

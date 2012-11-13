@@ -266,7 +266,6 @@ def array2text(a, scale=False, cols_per_row=6):
     return ' '.join(s)
 
 
-
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

@@ -64,7 +64,6 @@ def output_filename(rc, working_directory):
 
 
 def create_input(rc, working_directory):
-    parameters.sanity_check(rc)
     files = input_file_names(working_directory, rc)
 
     t = {}
