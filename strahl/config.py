@@ -1,30 +1,26 @@
-__all__ = [ 'NumericalParameters', 'ImpurityParameters',
-            'BackgroundParameters', 'ThomsonProfilesfromShot', 'STRAHLConfig',
-            'EquilibriumfromShot', 'TestProfiles', 'CircularGeometry']
+__all__ = ['NumericalParameters', 'ImpurityParameters',
+           'BackgroundParameters', 'ThomsonProfilesfromShot', 'STRAHLConfig',
+           'EquilibriumfromShot', 'TestProfiles', 'CircularGeometry']
 
 import numpy as np
 import periodictable
 
 _mandatory_keys = {
-    'numerical' :
-        [ 'grid.k', 'grid.radial_points', 'internal_eps', 'time.dt',
-          'time.final', 'max_internal_steps', 'iteration_type' ],
-    'impurity' :
-        [ 'decay_length', 'delta_source', 'atomic_weight', 'divertor_puff',
-          'element', 'source_position', 'sol_width', 'energy_of_neutrals',
-          'parallel_loss_time', 'diffusion_coefficient',
-          'convection_velocity', 'influx', 'rho_poloidal'],
-    'background' :
-        [ 'atomic_weight', 'charge', 'decay_length', 'rho_poloidal',
-          'electron_density', 'electron_temperature' ],
-    'geometry' :
-        ['rho_volume_at_lcfs', 'major_radius', 'rho_volume', 'sol_width',
-            'limiter_position' ]
+    'numerical': ['grid.k', 'grid.radial_points', 'internal_eps', 'time.dt',
+                  'time.final', 'max_internal_steps', 'iteration_type'],
+    'impurity': ['decay_length', 'delta_source', 'atomic_weight',
+                 'divertor_puff', 'element', 'source_position', 'sol_width',
+                 'energy_of_neutrals', 'parallel_loss_time',
+                 'diffusion_coefficient', 'convection_velocity', 'influx',
+                 'rhopol'],
+    'background': ['atomic_weight', 'charge', 'decay_length', 'rhopol',
+                   'electron_density', 'electron_temperature'],
+    'geometry': ['rvol_lcfs', 'major_radius', 'rhopol', 'rhovol', 'sol_width',
+                 'limiter_position']
 }
 
 
 def _has_all_mandatory_keys(d, section):
-    from nose.tools import set_trace
     a = set(d.as_dict().keys())
     b = _set_of_mandatory_keys(section)
 
@@ -38,7 +34,7 @@ def _set_of_mandatory_keys(section):
     for key in _mandatory_keys[section]:
         keys_needed.append('.'.join((section, key)))
 
-    if section == 'impurity': # FIXME an ugly workaround
+    if section == 'impurity':  # FIXME an ugly workaround
         keys_needed.append('recycling.tau_divsol')
         keys_needed.append('recycling.tau_pump')
         keys_needed.append('recycling.wall_R')
@@ -52,13 +48,13 @@ class NumericalParameters(object):
     >>> _has_all_mandatory_keys(numpar, 'numerical')
     """
     def __init__(self, timeStep, timeFinal, grid_k=10, eps=0.02,
-            radial_points=101, max_internal_steps=100):
+                 radial_points=101, max_internal_steps=100):
         d = {}
         d['numerical.time.final'] = timeFinal
         d['numerical.grid.k'] = grid_k
         d['numerical.time.dt'] = timeStep
         d['numerical.grid.radial_points'] = radial_points
-        
+
         d['numerical.internal_eps'] = eps
         d['numerical.max_internal_steps'] = max_internal_steps
         d['numerical.iteration_type'] = 1
@@ -125,7 +121,7 @@ class ImpurityParameters(object):
         # transport coefficients
         d['impurity.diffusion_coefficient'] = self.D
         d['impurity.convection_velocity'] = self.v
-        d['impurity.rho_poloidal'] = self.rho
+        d['impurity.rhopol'] = self.rho
 
         # impurity influx
         d['impurity.influx'] = self.influx
@@ -171,7 +167,7 @@ class BackgroundParameters(object):
     def set_element(self, element):
         if element not in ['H', 'D']:
             raise NotImplementedError('%s as background plasma is not'
-                ' supported.' % element)
+                                      ' supported.' % element)
         self._element = element
 
     def get_element(self):
@@ -198,7 +194,7 @@ class BackgroundParameters(object):
         d['background.atomic_weight'] = atomic_weights[self.element]
         d['background.charge'] = charges[self.element]
         d['background.decay_length'] = self.decay_length
-        d['background.rho_poloidal'] = rho
+        d['background.rhopol'] = rho
         d['background.electron_density'] = ne
         d['background.electron_temperature'] = Te
 
@@ -224,8 +220,8 @@ class TestProfiles(BackgroundParameters):
     def __init__(self):
         rho = np.linspace(0, 1.0, 20)
         r = rho / rho.max()
-        ne = 3e13 * (1 - r**2) + 0.5e13
-        Te = 1e3 * (1 - r**2) + 150
+        ne = 3e13 * (1 - r ** 2) + 0.5e13
+        Te = 1e3 * (1 - r ** 2) + 150
         super(TestProfiles, self).__init__('D', rho, ne, Te)
 
 
@@ -261,14 +257,46 @@ class CircularGeometry(GeometryParameters):
         self._major_radius = major_radius
 
     def as_dict(self):
+        from numpy import pi
+        def volume(r):
+            """
+            Volume of a circular torus.
+            """
+            return 2 * (r * pi) ** 2 * self._major_radius
+
         d = {}
-        d['geometry.rho_volume_at_lcfs'] = self._minor_radius * 1e2
-        d['geometry.major_radius'] = self._major_radius * 1e2
-        d['geometry.rho_volume'] = np.linspace(0, 1, 20)
-        d['geometry.rho_volume'] *= d['geometry.rho_volume_at_lcfs']
+        rhopol = np.linspace(0, 1, 20)
+        vol = volume(self._minor_radius * rhopol)
+        vol_lcfs = vol[-1]
+        rhovol = np.sqrt(vol / vol_lcfs)
+
+        d['geometry.rvol_lcfs'] = self._minor_radius * 1e2  # [cm]
+        d['geometry.major_radius'] = self._major_radius * 1e2  # [cm]
+        d['geometry.rhopol'] = np.linspace(0, 1, 20)
+        d['geometry.rhovol'] = rhovol
         d['geometry.sol_width'] = 1
         d['geometry.limiter_position'] = 1
         return d
+
+
+class Geometry(GeometryParameters):
+    def __init__(self, rhopol, volume, major_radius):
+        assert rhopol.shape == volume.shape, 'Inconsitent shape'
+        self.rhopol = rhopol
+        self.volume = volume
+        self.major_radius = major_radius
+
+    def as_dict(self):
+        rvol_lcfs = np.sqrt(self.volume.max() / (2 * np.pi ** 2 *
+                            self.major_radius))
+        rhovol = np.sqrt(self.volume / self.volume[-1])
+        d = {}
+        d['geometry.rvol_lcfs'] = rvol_lcfs * 1e2  # [cm]
+        d['geometry.major_radius'] = self.major_radius * 1e2  # [cm]
+        d['geometry.rhopol'] = self.rhopol
+        d['geometry.rhovol'] = rhovol
+        d['geometry.sol_width'] = 1
+        d['geometry.limiter_position'] = 1
 
 
 class NeoclassicalTransport(object):
@@ -286,9 +314,8 @@ class NeoclassicalTransport(object):
         elif p in ['off']:
             eta = 0
         else:
-            raise ValueError('unknown method for neoclassical transport: %s' %
-                    p)
-
+            raise ValueError('unknown method for '
+                             'neoclassical transport: %s' % p)
         self.type_ = type_
         self.eta = eta
 
@@ -305,7 +332,7 @@ class NeoclassicalTransport(object):
 
 class STRAHLConfig(object):
     def __init__(self, numerical, impurity, background, geometry,
-            neoclassical=None):
+                 neoclassical=None):
         assert isinstance(numerical, NumericalParameters)
         assert isinstance(impurity, ImpurityParameters)
         assert isinstance(background, BackgroundParameters)
@@ -316,7 +343,7 @@ class STRAHLConfig(object):
         self.background = background
         self.geometry = geometry
 
-        if neoclassical == None:
+        if neoclassical is None:
             self.neoclassical = NeoclassicalTransport()
         else:
             self.neoclassical = neoclassical

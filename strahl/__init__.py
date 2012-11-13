@@ -11,14 +11,15 @@ def default_params():
 
     return {
         # geometry
-        'geometry.rho_volume_at_lcfs': 20.0,
+        'geometry.rvol_lcfs': 20.0,
         'geometry.major_radius': 88.0,
-        'geometry.rho_volume': _r,
+        'geometry.rhovol': _r * 0.22,
+        'geometry.rhopol': _r,
         'geometry.sol_width': 8.0,
         'geometry.limiter_position': 6.5,
 
         # plasma background
-        'background.rho_poloidal': _r,
+        'background.rhopol': _r,
         'background.electron_density': 1e16 * (1 - _r ** 2),
         'background.electron_temperature': 1e3 * (1 - _r ** 2),
         'background.atomic_weight': 2,
@@ -29,7 +30,7 @@ def default_params():
         'impurity.element': 'Ar',
         'impurity.atomic_weight': 18,
         'impurity.energy_of_neutrals': 1.0,
-        'impurity.rho_poloidal': _r,
+        'impurity.rhopol': _r,
         'impurity.diffusion_coefficient': _r ** 2 + 0.01,
         'impurity.convection_velocity': zeros_like(_r),
         'impurity.influx': ([1.0], [2.51e21]),

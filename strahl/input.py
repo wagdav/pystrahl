@@ -67,7 +67,7 @@ def create_input(rc, working_directory):
     files = input_file_names(working_directory, rc)
 
     t = {}
-    t['geometry'] = datablocks.geometry2(rc)
+    t['geometry'] = datablocks.geometry(rc)
     t['background'] = datablocks.plasma_background(rc)
     t['influx'] = datablocks.impurity_influx(rc)
     t['main'] = datablocks.main_parameter_file(rc)

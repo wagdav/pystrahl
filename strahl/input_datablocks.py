@@ -4,7 +4,7 @@ import input_templates
 
 
 def plasma_background(rc):
-    rho = rc['background.rho_poloidal']
+    rho = rc['background.rhopol']
     ne = rc['background.electron_density']
     te = rc['background.electron_temperature']
     decay_length= rc['background.decay_length']
@@ -23,18 +23,18 @@ def plasma_background(rc):
 
 def geometry(rc):
     geom = {}
-    rho_vol = rc['geometry.rho_volume'] / rc['geometry.rho_volume_at_lcfs']
-    geom['R_lfs'] = np.zeros_like(rho_vol)
-    geom['R_hfs'] = np.zeros_like(rho_vol)
-    geom['rho_volume_relative'] = rho_vol
-    geom['background.rho_poloidal'] = rc['background.rho_poloidal']
+    rhovol = rc['geometry.rhovol']
+    geom['R_lfs'] = np.zeros_like(rhovol)
+    geom['R_hfs'] = np.zeros_like(rhovol)
+    geom['geometry.rhovol'] = rhovol
+    geom['geometry.rhopol'] = rc['geometry.rhopol']
 
     for key in geom.keys():
         geom[key] = array2text(geom[key])
 
-    geom['n_grid'] = len(rho_vol)
-    geom['n_sep'] = np.where(rho_vol <= 1.0, 1, 0).sum()
-    geom['geometry.rho_volume_at_lcfs'] = rc['geometry.rho_volume_at_lcfs']
+    geom['n_grid'] = len(rhovol)
+    geom['n_sep'] = np.where(rhovol <= 1.0, 1, 0).sum()
+    geom['geometry.rvol_lcfs'] = rc['geometry.rvol_lcfs']
     geom['geometry.major_radius'] = rc['geometry.major_radius']
 
     out = input_templates.geometry % geom
@@ -47,7 +47,7 @@ def geometry(rc):
 
 
 def geometry2(rc):
-    rhopol =  rc['background.rho_poloidal']
+    rhopol =  rc['background.rhopol']
 
     r0 = rc['geometry.major_radius'] / 100.
     return strahlgrid_circular(rhopol, r0)
@@ -180,12 +180,12 @@ def transport_properties(rc):
     >>> r = [0, 1, 2, 3, 4, 5]
     >>> D = [1, 2, 3, 4, 5, 6]
     >>> v = [1, 2, 3, 4, 5, 6]
-    >>> rc = {  'impurity.rho_poloidal' : r,
+    >>> rc = {  'impurity.rhopol' : r,
     ...         'impurity.diffusion_coefficient' : D,
     ...         'impurity.convection_velocity' : v}
     >>> o = transport_properties(rc)
     """
-    r = rc['impurity.rho_poloidal']
+    r = rc['impurity.rhopol']
     D = rc['impurity.diffusion_coefficient']
     v = rc['impurity.convection_velocity']
 
