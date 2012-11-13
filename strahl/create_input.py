@@ -52,6 +52,7 @@ def _cmd_run_case(rc):
     """
     return './strahl < param_files/run_%s' % _main(rc)
 
+
 def output_filename(rc, working_directory):
     """
     >>> output_filename({'impurity.element':'Ar'}, '/home/user/strahl_wk')
@@ -79,13 +80,6 @@ def create_input(rc, working_directory):
 
 def input_directory_names(maindir):
     """
-    >>> o = input_directory_names('xxx')
-    >>> print o['nete']
-    xxx/nete
-    >>> print o['param_files']
-    xxx/param_files
-    >>> print o['results']
-    xxx/results
     """
     out = {}
     out['nete'] = os.path.join(maindir, 'nete')
@@ -95,19 +89,6 @@ def input_directory_names(maindir):
 
 
 def input_file_names(maindir, params):
-    """
-    >>> from parameters import defaultParams
-    >>> o = input_file_names('xxx', defaultParams())
-
-    >>> print o['geometry']
-    xxx/nete/grid_99999.0
-    >>> print o['background']
-    xxx/nete/pp99999.0
-    >>> print o['main']
-    xxx/param_files/main_99999.0
-    >>> print o['influx']
-    xxx/nete/Arflx99999.dat
-    """
     dirnames = input_directory_names(maindir)
     casename = _casename(params)
 
@@ -135,9 +116,3 @@ def _casename(rc):
     '12345.0'
     """
     return '%(shot)s.%(index)d' % rc
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)
-

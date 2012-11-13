@@ -4,10 +4,6 @@ import templates
 
 
 def plasma_background(rc):
-    """
-    >>> from parameters import defaultParams
-    >>> o = plasma_background(defaultParams())
-    """
     rho = rc['background.rho_poloidal']
     ne = rc['background.electron_density']
     te = rc['background.electron_temperature']
@@ -26,10 +22,6 @@ def plasma_background(rc):
 
 
 def geometry(rc):
-    """
-    >>> from parameters import defaultParams
-    >>> o = geometry(defaultParams())
-    """
     geom = {}
     rho_vol = rc['geometry.rho_volume'] / rc['geometry.rho_volume_at_lcfs']
     geom['R_lfs'] = np.zeros_like(rho_vol)
@@ -131,10 +123,6 @@ def strahlgrid_circular(rho, r0=0.88, z0=0.23, uloop=0., bt0=1.44):
 
 
 def main_parameter_file(rc):
-    """
-    >>> from parameters import defaultParams
-    >>> o = main_parameter_file(defaultParams())
-    """
     p = {}
     p['transport_datablock'] = transport_properties(rc)
     p.update(rc)
