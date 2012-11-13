@@ -115,7 +115,7 @@ cv ne[cm^-3]/ Te[eV] / Ti [eV]
   %(ygrid)s
 
 cv decay length in rhovol [cm]
- 0.5
+ %(decay_length)f
 """
 
 

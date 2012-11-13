@@ -152,9 +152,10 @@ class ImpurityParameters(object):
 
 
 class BackgroundParameters(object):
-    def __init__(self, element, rho, ne, Te):
+    def __init__(self, element, rho, ne, Te, decay_length=2.0):
         self.element = element
         self.profiles = (rho, ne, Te)
+        self.decay_length = decay_length
 
     def set_element(self, element):
         if element not in ['H', 'D']:
@@ -185,7 +186,7 @@ class BackgroundParameters(object):
         d = {}
         d['background.atomic_weight'] = atomic_weights[self.element]
         d['background.charge'] = charges[self.element]
-        d['background.decay_length'] = 1 # FIXME: implicit parameter
+        d['background.decay_length'] = self.decay_length
         d['background.rho_poloidal'] = rho
         d['background.electron_density'] = ne
         d['background.electron_temperature'] = Te
