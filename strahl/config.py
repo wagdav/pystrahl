@@ -298,6 +298,8 @@ class Geometry(GeometryParameters):
         d['geometry.sol_width'] = 1
         d['geometry.limiter_position'] = 1
 
+        return d
+
 
 class NeoclassicalTransport(object):
     def __init__(self, type_='off', limits=(0., 1.)):
