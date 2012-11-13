@@ -1,6 +1,7 @@
 __all__ = ['NumericalParameters', 'ImpurityParameters',
            'BackgroundParameters', 'ThomsonProfilesfromShot', 'STRAHLConfig',
-           'EquilibriumfromShot', 'TestProfiles', 'CircularGeometry']
+           'EquilibriumfromShot', 'TestProfiles', 'CircularGeometry',
+           'Geometry']
 
 import numpy as np
 import periodictable
@@ -245,40 +246,6 @@ class GeometryParameters(object):
     pass
 
 
-class CircularGeometry(GeometryParameters):
-    """
-    Circular plasma with a given minor and major radius (both in meters).
-
-    >>> geom = CircularGeometry(minor_radius=0.22, major_radius=0.88)
-    >>> _has_all_mandatory_keys(geom, 'geometry')
-    """
-    def __init__(self, minor_radius, major_radius):
-        self._minor_radius = minor_radius
-        self._major_radius = major_radius
-
-    def as_dict(self):
-        from numpy import pi
-        def volume(r):
-            """
-            Volume of a circular torus.
-            """
-            return 2 * (r * pi) ** 2 * self._major_radius
-
-        d = {}
-        rhopol = np.linspace(0, 1, 20)
-        vol = volume(self._minor_radius * rhopol)
-        vol_lcfs = vol[-1]
-        rhovol = np.sqrt(vol / vol_lcfs)
-
-        d['geometry.rvol_lcfs'] = self._minor_radius * 1e2  # [cm]
-        d['geometry.major_radius'] = self._major_radius * 1e2  # [cm]
-        d['geometry.rhopol'] = np.linspace(0, 1, 20)
-        d['geometry.rhovol'] = rhovol
-        d['geometry.sol_width'] = 1
-        d['geometry.limiter_position'] = 1
-        return d
-
-
 class Geometry(GeometryParameters):
     def __init__(self, rhopol, volume, major_radius):
         assert rhopol.shape == volume.shape, 'Inconsitent shape'
@@ -299,6 +266,17 @@ class Geometry(GeometryParameters):
         d['geometry.limiter_position'] = 1
 
         return d
+
+
+class CircularGeometry(Geometry):
+    """
+    Circular plasma with a given minor and major radius (both in meters).
+    """
+    def __init__(self, minor_radius, major_radius):
+        self._minor_radius = minor_radius
+        rhopol = np.linspace(0, 1, 20)
+        volume = 2 * (minor_radius * rhopol * np.pi) ** 2 * major_radius
+        Geometry.__init__(self, rhopol, volume, major_radius)
 
 
 class NeoclassicalTransport(object):
