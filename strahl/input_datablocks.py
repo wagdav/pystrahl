@@ -154,7 +154,7 @@ def plasma_profile(x, y, decay_length):
     cv ne[cm^-3]/ Te[eV] / Ti [eV]
       1.0000e+00 1.0000e+00 2.0000e+00 3.0000e+00
     <BLANKLINE>
-    cv decay length in rho_volume [cm]
+    cv decay length in rvol [cm]
       1.00
     <BLANKLINE>
     """
