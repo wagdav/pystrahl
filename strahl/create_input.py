@@ -47,7 +47,7 @@ def _cmd_run_case(rc):
     """
     >>> input_dict = {'shot':12345, 'index':0, 'numerical.time.final': 1.23}
     >>> _cmd_run_case(input_dict)
-    'strahl < param_files/run_main_12345.0'
+    './strahl < param_files/run_main_12345.0'
     """
     return './strahl < param_files/run_%s' % _main(rc)
 

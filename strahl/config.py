@@ -24,14 +24,25 @@ _mandatory_keys = {
 
 
 def _has_all_mandatory_keys(d, section):
-    assert (set(d.as_dict().keys()) == _set_of_mandatory_keys(section)),\
-        '%s section contains wrong keys.' % section
+    from nose.tools import set_trace
+    a = set(d.as_dict().keys())
+    b = _set_of_mandatory_keys(section)
+
+    if a != b:
+        raise AssertionError('a-b:  %s\n b-a: %s' % (a.difference(b),
+                                                     b.difference(a)))
 
 
 def _set_of_mandatory_keys(section):
     keys_needed = []
     for key in _mandatory_keys[section]:
         keys_needed.append('.'.join((section, key)))
+
+    if section == 'impurity': # FIXME an ugly workaround
+        keys_needed.append('recycling.tau_divsol')
+        keys_needed.append('recycling.tau_pump')
+        keys_needed.append('recycling.wall_R')
+        keys_needed.append('recycling.switch')
     return set(keys_needed)
 
 

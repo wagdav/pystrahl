@@ -1,12 +1,4 @@
-#!/bin/bash
-PYTHON=/usr/bin/python
-TOP=`dirname $0`
-
-(cd $TOP/strahl/
-$PYTHON create_input.py
-$PYTHON datablocks.py
-$PYTHON parameters.py
-$PYTHON misc.py
-$PYTHON templates.py
-)
-
+echo "Running doctests in strahl"
+nosetests --with-doctest strahl
+echo "Running tests in tests.py"
+nosetests tests

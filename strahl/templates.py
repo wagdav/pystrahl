@@ -114,8 +114,8 @@ cv radial grid for interpolation
 cv ne[cm^-3]/ Te[eV] / Ti [eV]
   %(ygrid)s
 
-cv decay length in rhovol [cm]
- %(decay_length)f
+cv decay length in rho_volume [cm]
+  %(decay_length)1.2f
 """
 
 

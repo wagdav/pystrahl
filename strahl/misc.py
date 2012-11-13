@@ -80,7 +80,9 @@ def velocity_from_zero_flux(rho_vol, rho_pol, D, ne):
     >>> D = modified_gauss(6, 2, 1.9, 0.4, 0.05, 0.8)(rho_pol)
     >>> ne = 1e20 * (1 - rho_pol**2) + 1e18
     >>> v = velocity_from_zero_flux(rho_vol, rho_pol, D, ne)
+    """
 
+    """
     Illustration
     ------------
     >>> import matplotlib.pyplot as plt
