@@ -1,5 +1,7 @@
+F77=gfortran
+
 strahlgrid: src/strahlgrid.f
-	$(F77) -i $^ -o $@
+	$(F77) -o $@ $^
 
 clean:
 	rm -f strahlgrid
